@@ -1,21 +1,21 @@
-// Copyright (c) 2014-2019, The Monero Project
-// 
+// Copyright (c) 2014-2018, The Monero Project
+//
 // All rights reserved.
-// 
+//
 // Redistribution and use in source and binary forms, with or without modification, are
 // permitted provided that the following conditions are met:
-// 
+//
 // 1. Redistributions of source code must retain the above copyright notice, this list of
 //    conditions and the following disclaimer.
-// 
+//
 // 2. Redistributions in binary form must reproduce the above copyright notice, this list
 //    of conditions and the following disclaimer in the documentation and/or other
 //    materials provided with the distribution.
-// 
+//
 // 3. Neither the name of the copyright holder nor the names of its contributors may be
 //    used to endorse or promote products derived from this software without specific
 //    prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
 // MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL
@@ -25,7 +25,7 @@
 // INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 // Parts of this file are originally copyright (c) 2012-2013 The Cryptonote developers
 
 #include <algorithm>
@@ -47,6 +47,53 @@ namespace
 class TestDB: public cryptonote::BaseTestDB {
 public:
   virtual uint64_t height() const { return blocks.size(); }
+  virtual bool tx_exists(const crypto::hash& h) const { return false; }
+  virtual bool tx_exists(const crypto::hash& h, uint64_t& tx_index) const { return false; }
+  virtual uint64_t get_tx_unlock_time(const crypto::hash& h) const { return 0; }
+  virtual transaction get_tx(const crypto::hash& h) const { return transaction(); }
+  virtual bool get_tx(const crypto::hash& h, transaction &tx) const { return false; }
+  virtual uint64_t get_tx_count() const { return 0; }
+  virtual std::vector<transaction> get_tx_list(const std::vector<crypto::hash>& hlist) const { return std::vector<transaction>(); }
+  virtual uint64_t get_tx_block_height(const crypto::hash& h) const { return 0; }
+  virtual uint64_t get_num_outputs(const uint64_t& amount) const { return 1; }
+  virtual uint64_t get_indexing_base() const { return 0; }
+  virtual output_data_t get_output_key(const uint64_t& amount, const uint64_t& index) { return output_data_t(); }
+  virtual tx_out_index get_output_tx_and_index_from_global(const uint64_t& index) const { return tx_out_index(); }
+  virtual tx_out_index get_output_tx_and_index(const uint64_t& amount, const uint64_t& index) const { return tx_out_index(); }
+  virtual void get_output_tx_and_index(const uint64_t& amount, const std::vector<uint64_t> &offsets, std::vector<tx_out_index> &indices) const {}
+  virtual bool can_thread_bulk_indices() const { return false; }
+  virtual std::vector<uint64_t> get_tx_output_indices(const crypto::hash& h) const { return std::vector<uint64_t>(); }
+  virtual std::vector<uint64_t> get_tx_amount_output_indices(const uint64_t tx_index) const { return std::vector<uint64_t>(); }
+  virtual bool has_key_image(const crypto::key_image& img) const { return false; }
+  virtual void remove_block() { blocks.pop_back(); }
+  virtual uint64_t add_transaction_data(const crypto::hash& blk_hash, const transaction& tx, const crypto::hash& tx_hash, const crypto::hash& tx_prunable_hash) {return 0;}
+  virtual void remove_transaction_data(const crypto::hash& tx_hash, const transaction& tx) {}
+  virtual uint64_t add_output(const crypto::hash& tx_hash, const tx_out& tx_output, const uint64_t& local_index, const uint64_t unlock_time, const rct::key *commitment) {return 0;}
+  virtual void add_tx_amount_output_indices(const uint64_t tx_index, const std::vector<uint64_t>& amount_output_indices) {}
+  virtual void add_spent_key(const crypto::key_image& k_image) {}
+  virtual void remove_spent_key(const crypto::key_image& k_image) {}
+
+  virtual bool for_all_key_images(std::function<bool(const crypto::key_image&)>) const { return true; }
+  virtual bool for_blocks_range(const uint64_t&, const uint64_t&, std::function<bool(uint64_t, const crypto::hash&, const cryptonote::block&)>) const { return true; }
+  virtual bool for_all_transactions(std::function<bool(const crypto::hash&, const cryptonote::transaction&)>, bool pruned) const { return true; }
+  virtual bool for_all_outputs(std::function<bool(uint64_t amount, const crypto::hash &tx_hash, uint64_t height, size_t tx_idx)> f) const { return true; }
+  virtual bool for_all_outputs(uint64_t amount, const std::function<bool(uint64_t height)> &f) const { return true; }
+  virtual bool is_read_only() const { return false; }
+  virtual std::map<uint64_t, std::tuple<uint64_t, uint64_t, uint64_t>> get_output_histogram(const std::vector<uint64_t> &amounts, bool unlocked, uint64_t recent_cutoff, uint64_t min_count) const { return std::map<uint64_t, std::tuple<uint64_t, uint64_t, uint64_t>>(); }
+  virtual bool get_output_distribution(uint64_t amount, uint64_t from_height, uint64_t to_height, std::vector<uint64_t> &distribution, uint64_t &base) const { return false; }
+
+  virtual void add_txpool_tx(const transaction &tx, const txpool_tx_meta_t& details) {}
+  virtual void update_txpool_tx(const crypto::hash &txid, const txpool_tx_meta_t& details) {}
+  virtual uint64_t get_txpool_tx_count(bool include_unrelayed_txes = true) const { return 0; }
+  virtual bool txpool_has_tx(const crypto::hash &txid) const { return false; }
+  virtual void remove_txpool_tx(const crypto::hash& txid) {}
+  virtual bool get_txpool_tx_meta(const crypto::hash& txid, txpool_tx_meta_t &meta) const { return false; }
+  virtual bool get_txpool_tx_blob(const crypto::hash& txid, cryptonote::blobdata &bd) const { return false; }
+  virtual uint64_t get_database_size() const { return 0; }
+  virtual cryptonote::blobdata get_txpool_tx_blob(const crypto::hash& txid) const { return ""; }
+  virtual bool for_all_txpool_txes(std::function<bool(const crypto::hash&, const txpool_tx_meta_t&, const cryptonote::blobdata*)>, bool include_blob = false, bool include_unrelayed_txes = false) const { return false; }
+  virtual output_data_t get_output_key(const uint64_t& amount, const uint64_t& index) const { return output_data_t(); };
+  virtual void get_output_key(const uint64_t &amount, const std::vector<uint64_t> &offsets, std::vector<output_data_t> &outputs, bool allow_partial = false) const {};
   virtual void add_block( const block& blk
                         , size_t block_weight
                         , uint64_t long_term_block_weight
@@ -62,8 +109,8 @@ public:
     return blocks.at(height);
   }
   virtual void set_hard_fork_version(uint64_t height, uint8_t version) {
-    if (versions.size() <= height) 
-      versions.resize(height+1); 
+    if (versions.size() <= height)
+      versions.resize(height+1);
     versions[height] = version;
   }
   virtual uint8_t get_hard_fork_version(uint64_t height) const {
@@ -604,4 +651,3 @@ TEST(get, earliest_ideal_height)
     ASSERT_EQ(hf.get_earliest_ideal_height_for_version(9), 15);
     ASSERT_EQ(hf.get_earliest_ideal_height_for_version(10), std::numeric_limits<uint64_t>::max());
 }
-

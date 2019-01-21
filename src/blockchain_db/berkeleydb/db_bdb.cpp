@@ -2117,7 +2117,7 @@ void BlockchainBDB::get_output_global_indices(const uint64_t& amount, const std:
 
 }
 
-void BlockchainBDB::get_output_key(const uint64_t &amount, const std::vector<uint64_t> &offsets, std::vector<output_data_t> &outputs)
+void BlockchainBDB::get_output_key(const uint64_t &amount, const std::vector<uint64_t> &offsets, std::vector<output_data_t> &outputs) const
 {
     LOG_PRINT_L3("BlockchainBDB::" << __func__);
     check_open();

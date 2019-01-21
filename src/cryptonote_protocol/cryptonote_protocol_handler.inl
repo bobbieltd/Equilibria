@@ -777,9 +777,20 @@ namespace cryptonote
    }  
   //------------------------------------------------------------------------------------------------------------------------
   template<class t_core>
- int t_cryptonote_protocol_handler<t_core>::handle_request_fluffy_missing_tx(int command, NOTIFY_REQUEST_FLUFFY_MISSING_TX::request& arg, cryptonote_connection_context& context)
+  int t_cryptonote_protocol_handler<t_core>::handle_uptime_proof(int command, NOTIFY_UPTIME_PROOF::request& arg, cryptonote_connection_context& context)
  {
-   MLOG_P2P_MESSAGE("Received NOTIFY_REQUEST_FLUFFY_MISSING_TX (" << arg.missing_tx_indices.size() << " txes), block hash " << arg.block_hash);
+   MLOG_P2P_MESSAGE("Received NOTIFY_UPTIME_PROOF");
+   if(context.m_state != cryptonote_connection_context::state_normal)
+     return 1;
+   if (m_core.handle_uptime_proof(arg.timestamp, arg.pubkey, arg.sig))
+     relay_uptime_proof(arg, context);
+   return 1;
+ }
+ //------------------------------------------------------------------------------------------------------------------------
+ template<class t_core>
+  int t_cryptonote_protocol_handler<t_core>::handle_request_fluffy_missing_tx(int command, NOTIFY_REQUEST_FLUFFY_MISSING_TX::request& arg, cryptonote_connection_context& context)
+  {
+    MLOG_P2P_MESSAGE("Received NOTIFY_REQUEST_FLUFFY_MISSING_TX (" << arg.missing_tx_indices.size() << " txes), block hash " << arg.block_hash);
 
    std::vector<std::pair<cryptonote::blobdata, block>> local_blocks;
    std::vector<cryptonote::blobdata> local_txs;
@@ -851,6 +862,50 @@ namespace cryptonote
    post_notify<NOTIFY_NEW_FLUFFY_BLOCK>(fluffy_response, context);
    return 1;
  }
+  //------------------------------------------------------------------------------------------------------------------------
+  template<class t_core>
+  int t_cryptonote_protocol_handler<t_core>::handle_notify_new_deregister_vote(int command, NOTIFY_NEW_DEREGISTER_VOTE::request& arg, cryptonote_connection_context& context)
+  {
+    MLOG_P2P_MESSAGE("Received NOTIFY_NEW_DEREGISTER_VOTE (" << arg.votes.size() << " txes)");
+
+    if(context.m_state != cryptonote_connection_context::state_normal)
+      return 1;
+
+    if(!is_synchronized())
+    {
+      LOG_DEBUG_CC(context, "Received new deregister vote while syncing, ignored");
+      return 1;
+    }
+
+    for(auto it = arg.votes.begin(); it != arg.votes.end();)
+    {
+      cryptonote::vote_verification_context vvc = {};
+      m_core.add_deregister_vote(*it, vvc);
+
+      if (vvc.m_verification_failed)
+      {
+        LOG_PRINT_CCONTEXT_L1("Deregister vote verification failed, dropping connection");
+        drop_connection(context, true /*add_fail*/, false /*flush_all_spans i.e. delete cached block data from this peer*/);
+        return 1;
+      }
+
+      if (vvc.m_added_to_pool)
+      {
+        it++;
+      }
+      else
+      {
+        it = arg.votes.erase(it);
+      }
+    }
+
+    if (arg.votes.size())
+    {
+      relay_deregister_votes(arg, context);
+    }
+
+    return 1;
+  }
   //------------------------------------------------------------------------------------------------------------------------
   template<class t_core>
   int t_cryptonote_protocol_handler<t_core>::handle_notify_new_transactions(int command, NOTIFY_NEW_TRANSACTIONS::request& arg, cryptonote_connection_context& context)
@@ -2248,80 +2303,20 @@ skip:
   }
   //------------------------------------------------------------------------------------------------------------------------
   template<class t_core>
-  std::string t_cryptonote_protocol_handler<t_core>::get_peers_overview() const
-  {
-    std::stringstream ss;
-    const boost::posix_time::ptime now = boost::posix_time::microsec_clock::universal_time();
-    m_p2p->for_each_connection([&](const connection_context &ctx, nodetool::peerid_type peer_id, uint32_t support_flags) {
-      const uint32_t stripe = tools::get_pruning_stripe(ctx.m_pruning_seed);
-      char state_char = cryptonote::get_protocol_state_char(ctx.m_state);
-      ss << stripe + state_char;
-      if (ctx.m_last_request_time != boost::date_time::not_a_date_time)
-        ss << (((now - ctx.m_last_request_time).total_microseconds() > IDLE_PEER_KICK_TIME) ? "!" : "?");
-      ss <<  + " ";
-      return true;
-    });
-    return ss.str();
-  }
-  //------------------------------------------------------------------------------------------------------------------------
-  template<class t_core>
-  std::pair<uint32_t, uint32_t> t_cryptonote_protocol_handler<t_core>::get_next_needed_pruning_stripe() const
-  {
-    const uint64_t want_height_from_blockchain = m_core.get_current_blockchain_height();
-    const uint64_t want_height_from_block_queue = m_block_queue.get_next_needed_height(want_height_from_blockchain);
-    const uint64_t want_height = std::max(want_height_from_blockchain, want_height_from_block_queue);
-    uint64_t blockchain_height = m_core.get_target_blockchain_height();
-    // if we don't know the remote chain size yet, assume infinitely large so we get the right stripe if we're not near the tip
-    if (blockchain_height == 0)
-      blockchain_height = CRYPTONOTE_MAX_BLOCK_NUMBER;
-    const uint32_t next_pruning_stripe = tools::get_pruning_stripe(want_height, blockchain_height, CRYPTONOTE_PRUNING_LOG_STRIPES);
-    if (next_pruning_stripe == 0)
-      return std::make_pair(0, 0);
-    // if we already have a few peers on this stripe, but none on next one, try next one
-    unsigned int n_next = 0, n_subsequent = 0, n_others = 0;
-    const uint32_t subsequent_pruning_stripe = 1 + next_pruning_stripe % (1<<CRYPTONOTE_PRUNING_LOG_STRIPES);
-    m_p2p->for_each_connection([&](const connection_context &context, nodetool::peerid_type peer_id, uint32_t support_flags) {
-      if (context.m_state >= cryptonote_connection_context::state_synchronizing)
-      {
-        if (context.m_pruning_seed == 0 || tools::get_pruning_stripe(context.m_pruning_seed) == next_pruning_stripe)
-          ++n_next;
-        else if (tools::get_pruning_stripe(context.m_pruning_seed) == subsequent_pruning_stripe)
-          ++n_subsequent;
-        else
-          ++n_others;
-      }
-      return true;
-    });
-    const bool use_next = (n_next > m_max_out_peers / 2 && n_subsequent <= 1) || (n_next > 2 && n_subsequent == 0);
-    const uint32_t ret_stripe = use_next ? subsequent_pruning_stripe: next_pruning_stripe;
-    MIDEBUG(const std::string po = get_peers_overview(), "get_next_needed_pruning_stripe: want height " << want_height << " (" <<
-        want_height_from_blockchain << " from blockchain, " << want_height_from_block_queue << " from block queue), stripe " <<
-        next_pruning_stripe << " (" << n_next << "/" << m_max_out_peers << " on it and " << n_subsequent << " on " <<
-        subsequent_pruning_stripe << ", " << n_others << " others) -> " << ret_stripe << " (+" <<
-        (ret_stripe - next_pruning_stripe + (1 << CRYPTONOTE_PRUNING_LOG_STRIPES)) % (1 << CRYPTONOTE_PRUNING_LOG_STRIPES) <<
-        "), current peers " << po);
-    return std::make_pair(next_pruning_stripe, ret_stripe);
-  }
-  //------------------------------------------------------------------------------------------------------------------------
-  template<class t_core>
-  bool t_cryptonote_protocol_handler<t_core>::needs_new_sync_connections() const
-  {
-    const uint64_t target = m_core.get_target_blockchain_height();
-    const uint64_t height = m_core.get_current_blockchain_height();
-    if (target && target <= height)
-      return false;
-    size_t n_out_peers = 0;
-    m_p2p->for_each_connection([&](cryptonote_connection_context& ctx, nodetool::peerid_type peer_id, uint32_t support_flags)->bool{
-      if (!ctx.m_is_income)
-        ++n_out_peers;
-      return true;
-    });
-    if (n_out_peers >= m_max_out_peers)
-      return false;
-    return true;
-  }
-  //------------------------------------------------------------------------------------------------------------------------
-  template<class t_core>
+  bool t_cryptonote_protocol_handler<t_core>::relay_deregister_votes(NOTIFY_NEW_DEREGISTER_VOTE::request& arg, cryptonote_connection_context& exclude_context)
+ {
+   bool result = relay_post_notify<NOTIFY_NEW_DEREGISTER_VOTE>(arg, exclude_context);
+   m_core.set_deregister_votes_relayed(arg.votes);
+   return result;
+ }
+ //------------------------------------------------------------------------------------------------------------------------
+ template<class t_core>
+ bool t_cryptonote_protocol_handler<t_core>::relay_uptime_proof(NOTIFY_UPTIME_PROOF::request& arg, cryptonote_connection_context& exclude_context)
+ {
+   return relay_post_notify<NOTIFY_UPTIME_PROOF>(arg, exclude_context);
+ }
+ //------------------------------------------------------------------------------------------------------------------------
+ template<class t_core>
   void t_cryptonote_protocol_handler<t_core>::drop_connection(cryptonote_connection_context &context, bool add_fail, bool flush_all_spans)
   {
     LOG_DEBUG_CC(context, "dropping connection id " << context.m_connection_id << " (pruning seed " <<

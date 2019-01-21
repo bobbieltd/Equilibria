@@ -42,6 +42,7 @@ set(common_sources
   perf_timer.cpp
   pruning.cpp
   spawn.cpp
+  rules.cpp
   threadpool.cpp
   updates.cpp
   aligned.c
@@ -81,6 +82,7 @@ set(common_private_headers
   password.h
   perf_timer.h
   spawn.h
+  rules.h
   stack_trace.h
   threadpool.h
   updates.h

@@ -1,3 +1,5 @@
+// Copyright (c) 2014-2018, The Monero Project
+//
 // Copyright (c) 2014-2019, The Monero Project
 //
 // All rights reserved.
@@ -31,8 +33,10 @@
 #pragma once
 #include "cryptonote_protocol/cryptonote_protocol_defs.h"
 #include "cryptonote_basic/cryptonote_basic.h"
+#include "cryptonote_basic/verification_context.h"
 #include "cryptonote_basic/difficulty.h"
 #include "crypto/hash.h"
+#include "cryptonote_core/service_node_deregister.h"
 #include "rpc/rpc_handler.h"
 #include "common/varint.h"
 #include "common/perf_timer.h"
@@ -880,6 +884,12 @@ namespace cryptonote
       bool not_rct;
       bool untrusted;
 
+      bool invalid_block_height;
+    bool voters_quorum_index_out_of_bounds;
+    bool service_node_index_out_of_bounds;
+    bool signature_not_valid;
+    bool not_enough_votes;
+
       BEGIN_KV_SERIALIZE_MAP()
         KV_SERIALIZE(status)
         KV_SERIALIZE(reason)
@@ -893,6 +903,11 @@ namespace cryptonote
         KV_SERIALIZE(fee_too_low)
         KV_SERIALIZE(not_rct)
         KV_SERIALIZE(untrusted)
+        KV_SERIALIZE(invalid_block_height)
+        KV_SERIALIZE(voters_quorum_index_out_of_bounds)
+        KV_SERIALIZE(service_node_index_out_of_bounds)
+        KV_SERIALIZE(signature_not_valid)
+        KV_SERIALIZE(not_enough_votes)
       END_KV_SERIALIZE_MAP()
     };
     typedef epee::misc_utils::struct_init<response_t> response;
@@ -2475,6 +2490,15 @@ namespace cryptonote
     };
     typedef epee::misc_utils::struct_init<response_t> response;
   };
+  struct COMMAND_RPC_GET_QUORUM_STATE
+  {
+    struct request
+    {
+      uint64_t height;
+      BEGIN_KV_SERIALIZE_MAP()
+        KV_SERIALIZE(height)
+      END_KV_SERIALIZE_MAP()
+    };
 
   struct COMMAND_RPC_POP_BLOCKS
   {
@@ -2526,4 +2550,46 @@ namespace cryptonote
     typedef epee::misc_utils::struct_init<response_t> response;
   };
 
+    struct response
+    {
+      std::string status;
+      std::vector<std::string> quorum_nodes;
+      std::vector<std::string> nodes_to_test;
+      bool untrusted;
+
+      BEGIN_KV_SERIALIZE_MAP()
+        KV_SERIALIZE(status)
+        KV_SERIALIZE(quorum_nodes)
+        KV_SERIALIZE(nodes_to_test)
+        KV_SERIALIZE(untrusted)
+      END_KV_SERIALIZE_MAP()
+    };
+  };
+
+  struct COMMAND_RPC_GET_SERVICE_NODE_REGISTRATION_CMD
+  {
+    struct request
+  {
+    std::vector<std::string> args;
+    bool make_friendly; // Provide information about how to use the command in the result
+    BEGIN_KV_SERIALIZE_MAP()
+      KV_SERIALIZE(args)
+      KV_SERIALIZE(make_friendly)
+    END_KV_SERIALIZE_MAP()
+  };
+  struct response
+    {
+      std::string status;
+      std::string registration_cmd;
+        bool invalid_block_height;
+        bool voters_quorum_index_out_of_bounds;
+        bool service_node_index_out_of_bounds;
+        bool signature_not_valid;
+
+        BEGIN_KV_SERIALIZE_MAP()
+         KV_SERIALIZE(status)
+         KV_SERIALIZE(registration_cmd)
+       END_KV_SERIALIZE_MAP()
+      };
+  };
 }

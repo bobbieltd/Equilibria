@@ -6,24 +6,24 @@
 
 */
 
-// Copyright (c) 2014-2019, The Monero Project
-// 
+// Copyright (c) 2014-2018, The Monero Project
+//
 // All rights reserved.
-// 
+//
 // Redistribution and use in source and binary forms, with or without modification, are
 // permitted provided that the following conditions are met:
-// 
+//
 // 1. Redistributions of source code must retain the above copyright notice, this list of
 //    conditions and the following disclaimer.
-// 
+//
 // 2. Redistributions in binary form must reproduce the above copyright notice, this list
 //    of conditions and the following disclaimer in the documentation and/or other
 //    materials provided with the distribution.
-// 
+//
 // 3. Neither the name of the copyright holder nor the names of its contributors may be
 //    used to endorse or promote products derived from this software without specific
 //    prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
 // MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL
@@ -85,6 +85,8 @@ public:
 
   bool print_blockchain_info(uint64_t start_block_index, uint64_t end_block_index);
 
+  bool print_quorum_state(uint64_t height);
+
   bool set_log_level(int8_t level);
 
   bool set_log_categories(const std::string &categories);
@@ -128,9 +130,9 @@ public:
   bool in_peers(uint64_t limit);
 
   bool start_save_graph();
-  
+
   bool stop_save_graph();
-  
+
   bool hard_fork_info(uint8_t version);
 
   bool print_bans();
@@ -154,12 +156,8 @@ public:
   bool relay_tx(const std::string &txid);
 
   bool sync_info();
+  bool get_service_node_registration_cmd(const std::vector<std::string> &args);
 
-  bool pop_blocks(uint64_t num_blocks);
-
-  bool prune_blockchain();
-
-  bool check_blockchain_pruning();
 };
 
 } // namespace daemonize

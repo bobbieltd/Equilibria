@@ -670,6 +670,48 @@ bool t_rpc_command_executor::print_blockchain_info(uint64_t start_block_index, u
 
   return true;
 }
+bool t_rpc_command_executor::print_quorum_state(uint64_t height)
+{
+  cryptonote::COMMAND_RPC_GET_QUORUM_STATE::request req;
+  cryptonote::COMMAND_RPC_GET_QUORUM_STATE::response res;
+  epee::json_rpc::error error_resp;
+
+  req.height = height;
+  std::string fail_message = "Unsuccessful";
+
+  if (m_is_rpc)
+  {
+    if (!m_rpc_client->json_rpc_request(req, res, "get_quorum_state", fail_message.c_str()))
+    {
+      return true;
+    }
+  }
+  else
+  {
+    if (!m_rpc_server->on_get_quorum_state_json(req, res, error_resp) || res.status != CORE_RPC_STATUS_OK)
+    {
+      tools::fail_msg_writer() << make_error(fail_message, res.status);
+      return true;
+    }
+  }
+
+  tools::msg_writer() << "Quorum Service Nodes [" << res.quorum_nodes.size() << "]";
+  for (size_t i = 0; i < res.quorum_nodes.size(); i++)
+  {
+    const std::string &entry = res.quorum_nodes[i];
+    tools::msg_writer() << "[" << i << "] " << entry;
+  }
+
+  tools::msg_writer() << "Service Nodes To Test [" << res.nodes_to_test.size() << "]";
+  for (size_t i = 0; i < res.nodes_to_test.size(); i++)
+  {
+    const std::string &entry = res.nodes_to_test[i];
+    tools::msg_writer() << "[" << i << "] " << entry;
+  }
+
+
+  return true;
+}
 
 bool t_rpc_command_executor::set_log_level(int8_t level) {
   cryptonote::COMMAND_RPC_SET_LOG_LEVEL::request req;
@@ -2091,97 +2133,33 @@ bool t_rpc_command_executor::sync_info()
 
     return true;
 }
-
-bool t_rpc_command_executor::pop_blocks(uint64_t num_blocks)
+bool t_rpc_command_executor::get_service_node_registration_cmd(const std::vector<std::string> &args)
 {
-  cryptonote::COMMAND_RPC_POP_BLOCKS::request req;
-  cryptonote::COMMAND_RPC_POP_BLOCKS::response res;
-  std::string fail_message = "pop_blocks failed";
-
-  req.nblocks = num_blocks;
-  if (m_is_rpc)
-  {
-    if (!m_rpc_client->rpc_request(req, res, "/pop_blocks", fail_message.c_str()))
-    {
-      return true;
-    }
-  }
-  else
-  {
-    if (!m_rpc_server->on_pop_blocks(req, res) || res.status != CORE_RPC_STATUS_OK)
-    {
-      tools::fail_msg_writer() << make_error(fail_message, res.status);
-      return true;
-    }
-  }
-  tools::success_msg_writer() << "new height: " << res.height;
-
-  return true;
-}
-
-bool t_rpc_command_executor::prune_blockchain()
-{
-    cryptonote::COMMAND_RPC_PRUNE_BLOCKCHAIN::request req;
-    cryptonote::COMMAND_RPC_PRUNE_BLOCKCHAIN::response res;
+    cryptonote::COMMAND_RPC_GET_SERVICE_NODE_REGISTRATION_CMD::request req;
+    cryptonote::COMMAND_RPC_GET_SERVICE_NODE_REGISTRATION_CMD::response res;
     std::string fail_message = "Unsuccessful";
     epee::json_rpc::error error_resp;
 
-    req.check = false;
-
+    req.args = args;
+    req.make_friendly = !m_is_rpc;
     if (m_is_rpc)
     {
-        if (!m_rpc_client->json_rpc_request(req, res, "prune_blockchain", fail_message.c_str()))
-        {
-            return true;
-        }
-    }
-    else
-    {
-        if (!m_rpc_server->on_prune_blockchain(req, res, error_resp) || res.status != CORE_RPC_STATUS_OK)
+        if (!m_rpc_client->json_rpc_request(req, res, "get_service_node_registration_cmd", fail_message.c_str()))
         {
             tools::fail_msg_writer() << make_error(fail_message, res.status);
             return true;
         }
     }
-
-    tools::success_msg_writer() << "Blockchain pruned: seed " << epee::string_tools::to_string_hex(res.pruning_seed);
-    return true;
-}
-
-bool t_rpc_command_executor::check_blockchain_pruning()
-{
-    cryptonote::COMMAND_RPC_PRUNE_BLOCKCHAIN::request req;
-    cryptonote::COMMAND_RPC_PRUNE_BLOCKCHAIN::response res;
-    std::string fail_message = "Unsuccessful";
-    epee::json_rpc::error error_resp;
-
-    req.check = true;
-
-    if (m_is_rpc)
-    {
-        if (!m_rpc_client->json_rpc_request(req, res, "prune_blockchain", fail_message.c_str()))
-        {
-            return true;
-        }
-    }
     else
     {
-        if (!m_rpc_server->on_prune_blockchain(req, res, error_resp) || res.status != CORE_RPC_STATUS_OK)
+        if (!m_rpc_server->on_get_service_node_registration_cmd(req, res, error_resp) || res.status != CORE_RPC_STATUS_OK)
         {
-            tools::fail_msg_writer() << make_error(fail_message, res.status);
+            tools::fail_msg_writer() << make_error(fail_message, error_resp.message);
             return true;
         }
     }
 
-    if (res.pruning_seed)
-    {
-      tools::success_msg_writer() << "Blockchain pruning checked";
-    }
-    else
-    {
-      tools::success_msg_writer() << "Blockchain is not pruned";
-    }
+    tools::success_msg_writer() << res.registration_cmd;
     return true;
 }
-
 }// namespace daemonize
