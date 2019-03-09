@@ -4714,7 +4714,7 @@ boost::optional<epee::wipeable_string> simple_wallet::on_get_password(const char
   return pwd_container->password();
 }
 //----------------------------------------------------------------------------------------------------
-void simple_wallet::on_device_button_request(uint64_t code)
+bool simple_wallet::refresh_main(uint64_t start_height, enum ResetType reset, bool is_init)
 {
 	if (!try_connect_to_daemon(is_init))
 		return true;
@@ -8687,67 +8687,29 @@ bool simple_wallet::unspent_outputs(const std::vector<std::string> &args_)
 //----------------------------------------------------------------------------------------------------
 bool simple_wallet::rescan_blockchain(const std::vector<std::string> &args_)
 {
-  uint64_t start_height = 0;
-  ResetType reset_type = ResetSoft;
+	bool hard = false;
+	if (!args_.empty())
+	{
+		if (args_[0] != "hard")
+		{
+			fail_msg_writer() << tr("usage: rescan_bc [hard]");
+			return true;
+		}
+		hard = true;
+	}
 
-  if (!args_.empty())
-  {
-    if (args_[0] == "hard")
-    {
-      reset_type = ResetHard;
-    }
-    else if (args_[0] == "soft")
-    {
-      reset_type = ResetSoft;
-    }
-    else if (args_[0] == "keep_ki")
-    {
-      reset_type = ResetSoftKeepKI;
-    }
-    else
-    {
-      PRINT_USAGE(USAGE_RESCAN_BC);
-      return true;
-    }
-
-    if (args_.size() > 1)
-    {
-      try
-      {
-        start_height = boost::lexical_cast<uint64_t>( args_[1] );
-      }
-      catch(const boost::bad_lexical_cast &)
-      {
-        start_height = 0;
-      }
-    }
-  }
-
-  if (reset_type == ResetHard)
-  {
-    message_writer() << tr("Warning: this will lose any information which can not be recovered from the blockchain.");
-    message_writer() << tr("This includes destination addresses, tx secret keys, tx notes, etc");
-    std::string confirm = input_line(tr("Rescan anyway?"), true);
-    if(!std::cin.eof())
-    {
-      if (!command_line::is_yes(confirm))
-        return true;
-    }
-  }
-
-  const uint64_t wallet_from_height = m_wallet->get_refresh_from_block_height();
-  if (start_height > wallet_from_height)
-  {
-    message_writer() << tr("Warning: your restore height is higher than wallet restore height: ") << wallet_from_height;
-    std::string confirm = input_line(tr("Rescan anyway ? (Y/Yes/N/No): "));
-    if(!std::cin.eof())
-    {
-      if (!command_line::is_yes(confirm))
-        return true;
-    }
-  }
-
-  return refresh_main(start_height, reset_type, true);
+	if (hard)
+	{
+		message_writer() << tr("Warning: this will lose any information which can not be recovered from the blockchain.");
+		message_writer() << tr("This includes destination addresses, tx secret keys, tx notes, etc");
+		std::string confirm = input_line(tr("Rescan anyway ? (Y/Yes/N/No): "));
+		if (!std::cin.eof())
+		{
+			if (!command_line::is_yes(confirm))
+				return true;
+		}
+	}
+  return refresh_main(0,hard ? ResetHard : ResetSoft, true);
 }
 //----------------------------------------------------------------------------------------------------
 void simple_wallet::check_for_messages()
