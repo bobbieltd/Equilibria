@@ -465,14 +465,26 @@ int main(int argc, char* argv[])
   // because unlike blockchain_storage constructor, which takes a pointer to
   // tx_memory_pool, Blockchain's constructor takes tx_memory_pool object.
   LOG_PRINT_L0("Initializing source blockchain (BlockchainDB)");
-  std::unique_ptr<Blockchain> core_storage;
-  tx_memory_pool m_mempool(*core_storage);
-  core_storage.reset(new Blockchain(m_mempool));
+  // This is done this way because of the circular constructors.
+  struct BlockchainObjects
+  {
+	  Blockchain m_blockchain;
+	  tx_memory_pool m_mempool;
+	  service_nodes::service_node_list m_service_node_list;
+	  triton::deregister_vote_pool m_deregister_vote_pool;
+	  BlockchainObjects() :
+		  m_blockchain(m_mempool, m_service_node_list, m_deregister_vote_pool),
+		  m_service_node_list(m_blockchain),
+		  m_mempool(m_blockchain) { }
+  };
+
+  BlockchainObjects *blockchain_objects = new BlockchainObjects();
+  Blockchain *core_storage = &blockchain_objects->m_blockchain;
   BlockchainDB *db = new_db(db_type);
   if (db == NULL)
   {
-    LOG_ERROR("Attempted to use non-existent database type: " << db_type);
-    throw std::runtime_error("Attempting to use non-existent database type");
+	  LOG_ERROR("Attempted to use non-existent database type: " << db_type);
+	  throw std::runtime_error("Attempting to use non-existent database type");
   }
   LOG_PRINT_L0("database: " << db_type);
 
@@ -481,12 +493,12 @@ int main(int argc, char* argv[])
 
   try
   {
-    db->open(filename, DBF_RDONLY);
+	  db->open(filename, DBF_RDONLY);
   }
   catch (const std::exception& e)
   {
-    LOG_PRINT_L0("Error opening database: " << e.what());
-    return 1;
+	  LOG_PRINT_L0("Error opening database: " << e.what());
+	  return 1;
   }
   r = core_storage->init(db, net_type);
 
@@ -645,7 +657,7 @@ int main(int argc, char* argv[])
 
   if (!opt_txid_string.empty())
   {
-    start_txids.push_back(opt_txid);
+	  start_txids.push_back(opt_txid);
   }
   else if (!opt_output_string.empty())
   {
@@ -672,22 +684,22 @@ int main(int argc, char* argv[])
 
   if (start_txids.empty())
   {
-    LOG_PRINT_L0("No transaction(s) to check");
-    return 1;
+	  LOG_PRINT_L0("No transaction(s) to check");
+	  return 1;
   }
 
-  for (const crypto::hash &start_txid: start_txids)
+  for (const crypto::hash &start_txid : start_txids)
   {
-    LOG_PRINT_L0("Checking ancestry for txid " << start_txid);
+	  LOG_PRINT_L0("Checking ancestry for txid " << start_txid);
 
-    std::unordered_map<ancestor, unsigned int> ancestry;
+	  std::unordered_map<ancestor, unsigned int> ancestry;
 
-    std::list<crypto::hash> txids;
-    txids.push_back(start_txid);
-    while (!txids.empty())
-    {
-      const crypto::hash txid = txids.front();
-      txids.pop_front();
+	  std::list<crypto::hash> txids;
+	  txids.push_back(start_txid);
+	  while (!txids.empty())
+	  {
+		  const crypto::hash txid = txids.front();
+		  txids.pop_front();
 
       if (stop_requested)
         goto done;
@@ -726,11 +738,11 @@ int main(int argc, char* argv[])
       }
     }
 
-    MINFO("Ancestry for " << start_txid << ": " << get_deduplicated_ancestry(ancestry) << " / " << get_full_ancestry(ancestry));
-    for (const auto &i: ancestry)
-    {
-      MINFO(cryptonote::print_money(i.first.amount) << "/" << i.first.offset << ": " << i.second);
-    }
+	  MINFO("Ancestry for " << start_txid << ": " << get_deduplicated_ancestry(ancestry) << " / " << get_full_ancestry(ancestry));
+	  for (const auto &i : ancestry)
+	  {
+		  MINFO(cryptonote::print_money(i.first.amount) << "/" << i.first.offset << ": " << i.second);
+	  }
   }
 
 done:

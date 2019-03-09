@@ -47,7 +47,6 @@
 #include "crypto/crypto.h"
 #include "crypto/hash.h"
 #include "misc_language.h"
-#include "tx_extra.h"
 #include "ringct/rctTypes.h"
 #include "device/device.hpp"
 
@@ -170,6 +169,7 @@ namespace cryptonote
     };
     // tx information
     size_t   version;
+
     uint64_t unlock_time;  //number of block (or time), used as a limitation like: spend this tx not early then block/time
 
     std::vector<txin_v> vin;
@@ -197,6 +197,8 @@ namespace cryptonote
 
   public:
     transaction_prefix(){}
+	bool is_deregister_tx() const { return (version >= version_3_per_output_unlock_times) && is_deregister; }
+
     uint64_t get_unlock_time(size_t out_index) const
    {
      if (version >= version_3_per_output_unlock_times)
