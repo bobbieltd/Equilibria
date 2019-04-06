@@ -376,7 +376,7 @@ bool Blockchain::init(BlockchainDB* db, const network_type nettype, bool offline
   }
   m_hardfork->init();
 
-  
+
 
   m_db->set_hard_fork(m_hardfork);
 
@@ -1391,10 +1391,10 @@ bool Blockchain::create_block_template(block& b, const account_public_address& m
   //make blocks coin-base tx looks close to real coinbase tx to get truthful blob weight
   uint8_t hf_version = m_hardfork->get_current_version();
 
- 
+
   triton_miner_tx_context miner_tx_context(m_nettype,
-	  m_service_node_list.select_winner(b.prev_id),
-	  m_service_node_list.get_winner_addresses_and_portions(b.prev_id));
+	  m_service_node_list.select_winner(),
+	  m_service_node_list.get_winner_addresses_and_portions());
 
   bool r = construct_miner_tx(height, median_weight, already_generated_coins, txs_weight, fee, miner_address, b.miner_tx, ex_nonce, hf_version, miner_tx_context);
 
@@ -2865,103 +2865,68 @@ bool Blockchain::check_tx_inputs(transaction& tx, tx_verification_context &tvc, 
 {
 	PERF_TIMER(check_tx_inputs);
 	LOG_PRINT_L3("Blockchain::" << __func__);
-	size_t sig_index = 0;
+
 	if (pmax_used_block_height)
 		*pmax_used_block_height = 0;
 
-	crypto::hash tx_prefix_hash = get_transaction_prefix_hash(tx);
 
 	const uint8_t hf_version = m_hardfork->get_current_version();
 
-	if (hf_version >= 5 && tx.version < 2)
+
+
+
+	// Min/Max Version Check
 	{
-		tvc.m_invalid_version = true;
-		return false;
+    if      (hf_version >= 5) tvc.m_invalid_version = (tx.version <  transaction::version_3_per_output_unlock_times);
+     else                                                    tvc.m_invalid_version = (tx.version != transaction::version_2);
+
+     if (tvc.m_invalid_version)
+       return false;
 	}
-	else if (hf_version < 5 && tx.version > 2)
-	{
-		tvc.m_invalid_version = true;
-		return false;
-	}
+
+
 	// from hard fork 2, we require mixin at least 2 unless one output cannot mix with 2 others
 	// if one output cannot mix with 2 others, we accept at most 1 output that can mix
-	if (hf_version >= 2 && !tx.is_deregister_tx())
+	if (tx.is_deregister_tx())
 	{
-		size_t n_unmixable = 0, n_mixable = 0;
-		size_t mixin = std::numeric_limits<size_t>::max();
-		const size_t min_mixin = hf_version >= HF_VERSION_MIN_MIXIN_4 ? 4 : 2;
-		for (const auto& txin : tx.vin)
+    CHECK_AND_ASSERT_MES(tx.vin.size() == 0, false, "Deregister TX should have 0 inputs. This should have been rejected in check_tx_semantic!");
+
+      if (tx.rct_signatures.txnFee != 0)
 		{
-			// non txin_to_key inputs will be rejected below
-			if (txin.type() == typeid(txin_to_key))
-			{
-				const txin_to_key& in_to_key = boost::get<txin_to_key>(txin);
-				if (in_to_key.amount == 0)
-				{
-					// always consider rct inputs mixable. Even if there's not enough rct
-					// inputs on the chain to mix with, this is going to be the case for
-					// just a few blocks right after the fork at most
-					++n_mixable;
-				}
-				else
-				{
-					MDEBUG("Found unmixable output! This should never happen in Triton!");
-					uint64_t n_outputs = m_db->get_num_outputs(in_to_key.amount);
-					MDEBUG("output size " << print_money(in_to_key.amount) << ": " << n_outputs << " available");
-					// n_outputs includes the output we're considering
-					if (n_outputs <= min_mixin)
-						++n_unmixable;
-					else
-						++n_mixable;
-				}
-				// TODO(jcktm) - remove branch if safe after fork
-				if (in_to_key.key_offsets.size() - 1 < mixin)
-					mixin = in_to_key.key_offsets.size() - 1;
-				if (hf_version >= 5 && in_to_key.key_offsets.size() - 1 != min_mixin)
-				{
-					MERROR_VER("Tx " << get_transaction_hash(tx) << " has incorrect ring size (" << in_to_key.key_offsets.size() - 1 << ")");
-					tvc.m_low_mixin = true;
-					return false;
-				}
-			}
+      tvc.m_invalid_input = true;
+      tvc.m_verifivation_failed = true;
+      MERROR_VER("TX version deregister should have 0 fee!");
+      return false;
 		}
 
-		if (mixin < min_mixin)
-		{
-			if (n_unmixable == 0)
+
+      // Check the inputs (votes) of the transaction have not already been
+      // submitted to the blockchain under another transaction using a different
+      // combination of votes.
+      tx_extra_service_node_deregister deregister;
+      if (!get_service_node_deregister_from_tx_extra(tx.extra, deregister))
 			{
-				MERROR_VER("Tx " << get_transaction_hash(tx) << " has too low ring size (" << (mixin + 1) << "), and no unmixable inputs");
-				tvc.m_low_mixin = true;
-				return false;
-			}
-			if (n_mixable > 1)
-			{
-				MERROR_VER("Tx " << get_transaction_hash(tx) << " has too low ring size (" << (mixin + 1) << "), and more than one mixable input with unmixable inputs");
-				tvc.m_low_mixin = true;
-				return false;
-			}
-		}
-
-		// min/max tx version based on HF, and we accept v1 txes if having a non mixable
-		const size_t max_tx_version = (hf_version <= 3) ? 1 : (hf_version < 5)
-			? transaction::version_2
-			: transaction::version_3_per_output_unlock_times;
+        MERROR_VER("TX version deregister did not have the deregister metadata in the tx_extra");
+        return false;
+      }
 
 
-		if (tx.version > max_tx_version)
-		{
-			MERROR_VER("transaction version " << (unsigned)tx.version << " is higher than max accepted version " << max_tx_version);
-			tvc.m_verifivation_failed = true;
+
+    const std::shared_ptr<const service_nodes::quorum_state> quorum_state = m_service_node_list.get_quorum_state(deregister.block_height);
+    if (!quorum_state)
+    {
+      MERROR_VER("TX version 3 deregister_tx could not get quorum for height: " << deregister.block_height);
 			return false;
 		}
-		const size_t min_tx_version = (n_unmixable > 0 ? 1 : (hf_version >= HF_VERSION_ENFORCE_RCT) ? 2 : 1);
-		if (tx.version < min_tx_version)
+
+
+    if (!service_nodes::deregister_vote::verify_deregister(nettype(), deregister, tvc.m_vote_ctx, *quorum_state))
 		{
-			MERROR_VER("transaction version " << (unsigned)tx.version << " is lower than min accepted version " << min_tx_version);
 			tvc.m_verifivation_failed = true;
+      MERROR_VER("tx " << get_transaction_hash(tx) << ": version 3 deregister_tx could not be completely verified reason: " << print_vote_verification_context(tvc.m_vote_ctx));
 			return false;
 		}
-	}
+	
 
 	// from v7, sorted ins
 	if (hf_version >= 4) {
@@ -3263,68 +3228,12 @@ bool Blockchain::check_tx_inputs(transaction& tx, tx_verification_context &tvc, 
 			}
 		}
 	}
-	if (tx.is_deregister_tx())
-	{
-		if (tx.rct_signatures.txnFee != 0)
-		{
-			tvc.m_invalid_input = true;
-			tvc.m_verifivation_failed = true;
-			MERROR_VER("TX version deregister should have 0 fee!");
-			return false;
-		}
 
-		// Check the inputs (votes) of the transaction have not been already been
-		// submitted to the blockchain under another transaction using a different
-		// combination of votes.
 
-		tx_extra_service_node_deregister deregister;
-		if (!get_service_node_deregister_from_tx_extra(tx.extra, deregister))
-		{
-			MERROR_VER("TX version deregister did not have the deregister metadata in the tx_extra");
-			return false;
-		}
 
-		const std::shared_ptr<const service_nodes::quorum_state> quorum_state = m_service_node_list.get_quorum_state(deregister.block_height);
-		if (!quorum_state)
-		{
-			MERROR_VER("TX version 3 deregister_tx could not get quorum for height: " << deregister.block_height);
-			return false;
-		}
 
-		if (!triton::service_node_deregister::verify_deregister(nettype(), deregister, tvc.m_vote_ctx, *quorum_state))
-		{
-			tvc.m_verifivation_failed = true;
-			MERROR_VER("tx " << get_transaction_hash(tx) << ": version 3 deregister_tx could not be completely verified reason: " << print_vote_verification_context(tvc.m_vote_ctx));
-			return false;
-		}
 
-		// Check if deregister is too old or too new to hold onto
-		{
-		const uint64_t curr_height = get_current_blockchain_height();
 
-		if (deregister.block_height >= curr_height)
-		{
-			LOG_PRINT_L1("Received deregister tx for height: " << deregister.block_height
-				<< " and service node: " << deregister.service_node_index
-				<< ", is newer than current height: " << curr_height
-				<< " blocks and has been rejected.");
-			tvc.m_vote_ctx.m_invalid_block_height = true;
-			tvc.m_verifivation_failed = true;
-			return false;
-		}
-
-		uint64_t delta_height = curr_height - deregister.block_height;
-		if (delta_height >= triton::service_node_deregister::DEREGISTER_LIFETIME_BY_HEIGHT)
-		{
-			LOG_PRINT_L1("Received deregister tx for height: " << deregister.block_height
-				<< " and service node: " << deregister.service_node_index
-				<< ", is older than: " << triton::service_node_deregister::DEREGISTER_LIFETIME_BY_HEIGHT
-				<< " blocks and has been rejected. The current height is: " << curr_height);
-			tvc.m_vote_ctx.m_invalid_block_height = true;
-			tvc.m_verifivation_failed = true;
-			return false;
-		}
-	}
 
 	const uint64_t height = deregister.block_height;
 	const size_t num_blocks_to_check = triton::service_node_deregister::DEREGISTER_LIFETIME_BY_HEIGHT;

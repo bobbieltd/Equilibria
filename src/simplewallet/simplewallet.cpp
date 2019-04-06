@@ -8491,15 +8491,21 @@ bool simple_wallet::show_transfers(const std::vector<std::string> &args_)
 		enum console_colors color = console_color_white;
 		if (transfer.confirmed)
 		{
-			switch (transfer.type)
-			{
-			case tools::pay_type::in:           color = console_color_green; break;
-			case tools::pay_type::out:          color = console_color_yellow; break;
-			case tools::pay_type::miner:        color = console_color_cyan; break;
-			case tools::pay_type::stake:        color = console_color_blue; break;
-			case tools::pay_type::service_node: color = console_color_cyan; break;
-			default:                            color = console_color_magenta; break;
-			}
+      switch (transfer.type)
+     {
+       case tools::pay_type::in:
+       case tools::pay_type::miner:
+       case tools::pay_type::service_node:
+         running_balance += transfer.amount;
+         break;
+       case tools::pay_type::stake:
+         running_balance -= transfer.fee;
+       case tools::pay_type::out:
+         running_balance -= transfer.amount + transfer.fee;
+       default:
+         // do nothing
+         break;
+     }
 		}
 
 		if (!transfer.confirmed) color = console_color_white;
