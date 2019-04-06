@@ -28,7 +28,7 @@ WORKDIR /usr/local
 #Cmake
 ARG CMAKE_VERSION=3.13.0
 ARG CMAKE_VERSION_DOT=v3.13
-ARG CMAKE_HASH=4058b2f1a53c026564e8936698d56c3b352d90df067b195cb749a97a3d273c90 
+ARG CMAKE_HASH=4058b2f1a53c026564e8936698d56c3b352d90df067b195cb749a97a3d273c90
 RUN set -ex \
     && curl -s -O https://cmake.org/files/${CMAKE_VERSION_DOT}/cmake-${CMAKE_VERSION}.tar.gz \
     && echo "${CMAKE_HASH}  cmake-${CMAKE_VERSION}.tar.gz" | sha256sum -c \
@@ -185,25 +185,24 @@ RUN set -ex && \
     rm -rf /var/lib/apt
 COPY --from=builder /src/build/release/bin /usr/local/bin/
 
-# Create monero user
-RUN adduser --system --group --disabled-password monero && \
-	mkdir -p /wallet /home/monero/.bitmonero && \
-	chown -R monero:monero /home/monero/.bitmonero && \
-	chown -R monero:monero /wallet
+# Create triton user
+RUN adduser --system --group --disabled-password triton && \
+	mkdir -p /wallet /home/triton/.bittriton && \
+	chown -R triton:triton /home/triton/.bittriton && \
+	chown -R triton:triton /wallet
 
 # Contains the blockchain
-VOLUME /home/monero/.bitmonero
+VOLUME /home/triton/.triton
 
 # Generate your wallet via accessing the container and run:
 # cd /wallet
-# monero-wallet-cli
+# triton-wallet-cli
 VOLUME /wallet
 
-EXPOSE 18080
-EXPOSE 18081
+EXPOSE 9230
+EXPOSE 9231
 
-# switch to user monero
-USER monero
+# switch to user triton
+USER triton
 
-ENTRYPOINT ["monerod", "--p2p-bind-ip=0.0.0.0", "--p2p-bind-port=18080", "--rpc-bind-ip=0.0.0.0", "--rpc-bind-port=18081", "--non-interactive", "--confirm-external-bind"]
-
+ENTRYPOINT ["tritond", "--p2p-bind-ip=0.0.0.0", "--p2p-bind-port=9230", "--rpc-bind-ip=0.0.0.0", "--rpc-bind-port=9231", "--non-interactive", "--confirm-external-bind"]
