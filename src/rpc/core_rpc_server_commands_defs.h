@@ -1021,7 +1021,25 @@ namespace cryptonote
       END_KV_SERIALIZE_MAP()
     };
   };
+  //-----------------------------------------------
+   struct COMMAND_RPC_GET_ALL_SERVICE_NODES_KEYS
+   {
+     struct request
+     {
+       bool fully_funded_nodes_only; // Return keys for service nodes if they are funded and working on the network
+       BEGIN_KV_SERIALIZE_MAP()
+         KV_SERIALIZE_OPT(fully_funded_nodes_only, (bool)true)
+       END_KV_SERIALIZE_MAP()
+     };
 
+     struct response
+     {
+       std::vector<std::string> keys; // NOTE: Returns as base32z of the hex key, for Lokinet internal usage
+       BEGIN_KV_SERIALIZE_MAP()
+         KV_SERIALIZE(keys)
+       END_KV_SERIALIZE_MAP()
+     };
+   };
 
   //-----------------------------------------------
   struct COMMAND_RPC_STOP_MINING
@@ -1214,6 +1232,7 @@ namespace cryptonote
       difficulty_type difficulty;
       difficulty_type cumulative_difficulty;
       uint64_t reward;
+      uint64_t miner_reward;
       uint64_t block_size;
       uint64_t block_weight;
       uint64_t num_txes;
@@ -1232,6 +1251,7 @@ namespace cryptonote
         KV_SERIALIZE(difficulty)
         KV_SERIALIZE(cumulative_difficulty)
         KV_SERIALIZE(reward)
+        KV_SERIALIZE(miner_reward)
         KV_SERIALIZE(block_size)
         KV_SERIALIZE_OPT(block_weight, (uint64_t)0)
         KV_SERIALIZE(num_txes)
@@ -2383,7 +2403,7 @@ namespace cryptonote
     };
   };
 
-  struct COMMAND_RPC_GET_SERVICE_NODE_REGISTRATION_CMD
+  struct COMMAND_RPC_GET_SERVICE_NODE_REGISTRATION_CMD_RAW
   {
     struct request
   {
@@ -2409,6 +2429,42 @@ namespace cryptonote
        END_KV_SERIALIZE_MAP()
       };
   };
+  struct COMMAND_RPC_GET_SERVICE_NODE_REGISTRATION_CMD
+ {
+   struct contribution_t {
+     std::string address;
+     uint64_t amount;
+
+     BEGIN_KV_SERIALIZE_MAP()
+       KV_SERIALIZE(address)
+       KV_SERIALIZE(amount)
+     END_KV_SERIALIZE_MAP()
+   };
+
+   struct request
+   {
+     bool autostake;
+     std::string operator_cut;
+     std::vector<contribution_t> contributions;
+
+     BEGIN_KV_SERIALIZE_MAP()
+       KV_SERIALIZE(autostake)
+       KV_SERIALIZE(operator_cut)
+       KV_SERIALIZE(contributions)
+     END_KV_SERIALIZE_MAP()
+   };
+
+   struct response
+   {
+     std::string status;
+     std::string registration_cmd;
+
+     BEGIN_KV_SERIALIZE_MAP()
+       KV_SERIALIZE(status)
+       KV_SERIALIZE(registration_cmd)
+     END_KV_SERIALIZE_MAP()
+   };
+ };
   struct COMMAND_RPC_GET_SERVICE_NODE_KEY
   {
 	  struct request
