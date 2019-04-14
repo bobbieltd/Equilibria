@@ -151,7 +151,7 @@ namespace cryptonote
 	  tx.vout.clear();
 	  tx.extra.clear();
 	  tx.output_unlock_times.clear();
-	  tx.is_deregister = false;
+		tx.type = transaction::type_standard;
 	  tx.version = (hard_fork_version >= 5) ? transaction::version_3_per_output_unlock_times : transaction::version_2;
 
 	  const network_type                                             nettype = miner_tx_context.nettype;
@@ -247,7 +247,7 @@ namespace cryptonote
 
 	uint64_t expected_amount = reward_parts.miner_reward() + reward_parts.service_node_paid;
 	CHECK_AND_ASSERT_MES(summary_amounts == expected_amount, false, "Failed to construct miner tx, summary_amounts = " << summary_amounts << " not equal total block_reward = " << expected_amount);
-	
+
 	//lock
 	tx.unlock_time = height + CRYPTONOTE_MINED_MONEY_UNLOCK_WINDOW;
 	tx.vin.push_back(in);
@@ -322,7 +322,7 @@ namespace cryptonote
 
 
   //---------------------------------------------------------------
-  bool construct_tx_with_tx_key(const account_keys& sender_account_keys, const std::unordered_map<crypto::public_key, subaddress_index>& subaddresses, std::vector<tx_source_entry>& sources, std::vector<tx_destination_entry>& destinations, const boost::optional<cryptonote::tx_destination_entry>& change_addr, std::vector<uint8_t> extra, transaction& tx, uint64_t unlock_time, const crypto::secret_key &tx_key, const std::vector<crypto::secret_key> &additional_tx_keys, bool rct, rct::RangeProofType range_proof_type, rct::multisig_out *msout, bool per_output_unlock, bool shuffle_outs)
+  bool construct_tx_with_tx_key(const account_keys& sender_account_keys, const std::unordered_map<crypto::public_key, subaddress_index>& subaddresses, std::vector<tx_source_entry>& sources, std::vector<tx_destination_entry>& destinations, const boost::optional<cryptonote::tx_destination_entry>& change_addr, std::vector<uint8_t> extra, transaction& tx, uint64_t unlock_time, const crypto::secret_key &tx_key, const std::vector<crypto::secret_key> &additional_tx_keys, bool rct, rct::RangeProofType range_proof_type, rct::multisig_out *msout, bool shuffle_outs, const triton_construct_tx_params tx_params)
   {
     hw::device &hwdev = sender_account_keys.get_device();
 
@@ -340,18 +340,28 @@ namespace cryptonote
       msout->c.clear();
     }
 
-	if (per_output_unlock)
+		if (tx_params.v4_allow_tx_types)
 	{
-		tx.version = 3;
+		tx.version = transaction::version_4_tx_types;
+      tx.type    = transaction::type_standard;
 	}
 	else
 	{
-		tx.version = rct ? 2 : 1;
-		tx.unlock_time = unlock_time;
+		if (tx_params.v3_per_output_unlock)
+      {
+        tx.version = transaction::version_3_per_output_unlock_times;
+      }
+      else
+      {
+        tx.version     = tx_params.v2_rct ? 2 : 1;
+        tx.unlock_time = unlock_time;
+      }
 	}
 
     tx.extra = extra;
     crypto::public_key txkey_pub;
+		if (tx_params.v3_is_staking_tx)
+		 add_tx_secret_key_to_tx_extra(tx.extra, tx_key);
 
     // if we have a stealth payment id, find it and encrypt it with the tx key now
     std::vector<tx_extra_field> tx_extra_fields;
@@ -534,10 +544,10 @@ namespace cryptonote
     //fill outputs
     size_t output_index = 0;
     bool found_change = false;
+		tx_extra_tx_key_image_proofs key_image_proofs;
     for(const tx_destination_entry& dst_entr: destinations)
     {
       CHECK_AND_ASSERT_MES(dst_entr.amount > 0 || tx.version > 1, false, "Destination with wrong amount: " << dst_entr.amount);
-      crypto::public_key out_eph_public_key;
 
       hwdev.generate_output_ephemeral_keys(tx.version,sender_account_keys, txkey_pub, tx_key,
                                            dst_entr, change_addr, output_index,
@@ -545,6 +555,7 @@ namespace cryptonote
                                            additional_tx_public_keys, amount_keys, out_eph_public_key);
 
       bool r;
+			crypto::key_derivation derivation;
       if (change_addr && *change_addr == dst_entr && !found_change)
       {
         found_change = true;
@@ -559,7 +570,7 @@ namespace cryptonote
       else
       {
         // sending to the recipient; derivation = r*A (or s*C in the subaddress scheme)
-        r = hwdev.generate_key_derivation(dst_entr.addr.m_view_public_key, dst_entr.is_subaddress && need_additional_txkeys ? additional_txkey.sec : tx_key, derivation);
+				r = hwdev.generate_key_derivation(dst_entr.addr.m_view_public_key, dst_entr.is_subaddress && need_additional_txkeys ? additional_txkey.sec : tx_key, derivation);
         CHECK_AND_ASSERT_MES(r, false, "at creation outs: failed to generate_key_derivation(" << dst_entr.addr.m_view_public_key << ", " << (dst_entr.is_subaddress && need_additional_txkeys ? additional_txkey.sec : tx_key) << ")");
 
         if (tx.version > 2)
@@ -579,10 +590,35 @@ namespace cryptonote
         hwdev.derivation_to_scalar(derivation, output_index, scalar1);
         amount_keys.push_back(rct::sk2rct(scalar1));
       }
+
+			crypto::public_key out_eph_public_key;
       r = hwdev.derive_public_key(derivation, output_index, dst_entr.addr.m_spend_public_key, out_eph_public_key);
       CHECK_AND_ASSERT_MES(r, false, "at creation outs: failed to derive_public_key(" << derivation << ", " << output_index << ", "<< dst_entr.addr.m_spend_public_key << ")");
 
       hwdev.add_output_key_mapping(dst_entr.addr.m_view_public_key, dst_entr.addr.m_spend_public_key, dst_entr.is_subaddress, output_index, amount_keys.back(), out_eph_public_key);
+
+			f (tx_params.v3_is_staking_tx)
+      {
+        CHECK_AND_ASSERT_MES(dst_entr.addr == sender_account_keys.m_account_address, false, "A staking contribution must return back to the original sendee otherwise the pre-calculated key image is incorrect");
+        CHECK_AND_ASSERT_MES(dst_entr.is_subaddress == false, false, "Staking back to a subaddress is not allowed"); // TODO(loki): Maybe one day, revisit this
+        CHECK_AND_ASSERT_MES(need_additional_txkeys == false, false, "Staking TX's can not required additional TX Keys"); // TODO(loki): Maybe one day, revisit this
+
+        if (!(change_addr && *change_addr == dst_entr))
+        {
+          tx_extra_tx_key_image_proofs::proof proof = {};
+          keypair                ephemeral_keys = {};
+          const subaddress_index zeroth_address = {};
+          if(!generate_key_image_helper(sender_account_keys, subaddresses, out_eph_public_key, txkey_pub, additional_tx_public_keys, output_index, ephemeral_keys, proof.key_image, hwdev))
+          {
+            LOG_ERROR("Key image generation failed for staking TX!");
+            return false;
+          }
+
+          crypto::public_key const *out_eph_public_key_ptr = &out_eph_public_key;
+          crypto::generate_ring_signature((const crypto::hash&)proof.key_image, proof.key_image, &out_eph_public_key_ptr, 1, ephemeral_keys.sec, 0, &proof.signature);
+          key_image_proofs.proofs.push_back(proof);
+        }
+      }
 
       tx_out out;
       out.amount = dst_entr.amount;
@@ -594,6 +630,12 @@ namespace cryptonote
       summary_outs_money += dst_entr.amount;
     }
     CHECK_AND_ASSERT_MES(additional_tx_public_keys.size() == additional_tx_keys.size(), false, "Internal error creating additional public keys");
+
+		if (tx_params.v3_is_staking_tx)
+		 {
+			 CHECK_AND_ASSERT_MES(key_image_proofs.proofs.size() >= 1, false, "No key image proofs were generated for staking tx");
+			 add_tx_key_image_proofs_to_tx_extra(tx.extra, key_image_proofs);
+		 }
 
     remove_field_from_tx_extra(tx.extra, typeid(tx_extra_additional_pub_keys));
 
@@ -779,14 +821,11 @@ namespace cryptonote
     return true;
   }
   //---------------------------------------------------------------
-  bool construct_tx_and_get_tx_key(const account_keys& sender_account_keys, const std::unordered_map<crypto::public_key, subaddress_index>& subaddresses, std::vector<tx_source_entry>& sources, std::vector<tx_destination_entry>& destinations, const boost::optional<cryptonote::tx_destination_entry>& change_addr, std::vector<uint8_t> extra, transaction& tx, uint64_t unlock_time, crypto::secret_key &tx_key, std::vector<crypto::secret_key> &additional_tx_keys, bool rct, rct::RangeProofType range_proof_type, rct::multisig_out *msout,bool is_staking_tx, bool per_output_unlock)
+	bool construct_tx_and_get_tx_key(const account_keys& sender_account_keys, const std::unordered_map<crypto::public_key, subaddress_index>& subaddresses, std::vector<tx_source_entry>& sources, std::vector<tx_destination_entry>& destinations, const boost::optional<cryptonote::tx_destination_entry>& change_addr, std::vector<uint8_t> extra, transaction& tx, uint64_t unlock_time, crypto::secret_key &tx_key, std::vector<crypto::secret_key> &additional_tx_keys, rct::multisig_out *msout, triton_construct_tx_params const tx_params)
+
   {
     hw::device &hwdev = sender_account_keys.get_device();
     hwdev.open_tx(tx_key);
-
-    if (is_staking_tx)
-      add_tx_secret_key_to_tx_extra(extra, tx_key);
-
 
     // figure out if we need to make additional tx pubkeys
     size_t num_stdaddresses = 0;
@@ -801,19 +840,21 @@ namespace cryptonote
         additional_tx_keys.push_back(keypair::generate(sender_account_keys.get_device()).sec);
     }
 
-    bool r = construct_tx_with_tx_key(sender_account_keys, subaddresses, sources, destinations, change_addr, extra, tx, unlock_time, tx_key, additional_tx_keys, rct, range_proof_type, msout,per_output_unlock);
+    bool r = construct_tx_with_tx_key(sender_account_keys, subaddresses, sources, destinations, change_addr, extra, tx, unlock_time, tx_key, additional_tx_keys, rct, range_proof_type, msout,true,tx_params);
     hwdev.close_tx();
     return r;
   }
   //---------------------------------------------------------------
-  bool construct_tx(const account_keys& sender_account_keys, std::vector<tx_source_entry>& sources, const std::vector<tx_destination_entry>& destinations, const boost::optional<cryptonote::tx_destination_entry>& change_addr, std::vector<uint8_t> extra, transaction& tx, uint64_t unlock_time, bool is_staking, bool per_output_unlock)
+  bool construct_tx(const account_keys& sender_account_keys, std::vector<tx_source_entry> &sources, const std::vector<tx_destination_entry>& destinations, const boost::optional<cryptonote::tx_destination_entry>& change_addr, std::vector<uint8_t> extra, transaction& tx, uint64_t unlock_time, bool is_staking, bool per_output_unlock)
   {
      std::unordered_map<crypto::public_key, cryptonote::subaddress_index> subaddresses;
      subaddresses[sender_account_keys.m_account_address.m_spend_public_key] = {0,0};
      crypto::secret_key tx_key;
      std::vector<crypto::secret_key> additional_tx_keys;
      std::vector<tx_destination_entry> destinations_copy = destinations;
-     return construct_tx_and_get_tx_key(sender_account_keys, subaddresses, sources, destinations_copy, change_addr, extra, tx, unlock_time, tx_key, additional_tx_keys, false, rct::RangeProofBorromean, NULL, is_staking, per_output_unlock);
+		 triton_construct_tx_params tx_params(hf_version);
+	 	 tx_params.v3_is_staking_tx = is_staking;
+     return construct_tx_and_get_tx_key(sender_account_keys, subaddresses, sources, destinations_copy, change_addr, extra, tx, unlock_time, tx_key, additional_tx_keys, NULL, tx_params);
   }
   //---------------------------------------------------------------
   bool generate_genesis_block(
