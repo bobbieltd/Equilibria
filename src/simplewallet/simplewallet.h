@@ -141,8 +141,8 @@ namespace cryptonote
     bool set_subaddress_lookahead(const std::vector<std::string> &args = std::vector<std::string>());
     bool set_segregation_height(const std::vector<std::string> &args = std::vector<std::string>());
     bool set_ignore_fractional_outputs(const std::vector<std::string> &args = std::vector<std::string>());
-	bool set_fork_on_autostake(const std::vector<std::string> &args = std::vector<std::string>());
-
+    bool print_locked_stakes(const std::vector<std::string> &args_);
+    bool print_locked_stakes_main(const std::vector<std::string> &args_, bool print_result);
     bool help(const std::vector<std::string> &args = std::vector<std::string>());
     bool start_mining(const std::vector<std::string> &args);
     bool stop_mining(const std::vector<std::string> &args);
@@ -159,7 +159,13 @@ namespace cryptonote
     bool locked_transfer(const std::vector<std::string> &args);
     bool stake(const std::vector<std::string> &args_);
     bool register_service_node(const std::vector<std::string> &args_);
+    bool print_locked_stakes(const std::vector<std::string> &args_);
+    bool print_locked_stakes_main(const std::vector<std::string> &args_, bool print_result);
+    bool request_stake_unlock(const std::vector<std::string> &args_);
     bool locked_sweep_all(const std::vector<std::string> &args);
+
+    enum class sweep_type_t { stake, register_stake, all_or_below, single };
+    bool sweep_main_internal(sweep_type_t sweep_type, std::vector<tools::wallet2::pending_tx> &ptx_vector, cryptonote::address_parse_info const &dest);
     bool sweep_main(uint64_t below, bool locked, const std::vector<std::string> &args);
     bool sweep_all(const std::vector<std::string> &args);
     bool sweep_below(const std::vector<std::string> &args);
@@ -230,8 +236,7 @@ namespace cryptonote
     bool unblackball(const std::vector<std::string>& args);
     bool blackballed(const std::vector<std::string>& args);
     bool version(const std::vector<std::string>& args);
-	bool register_service_node_main(const std::vector<std::string>& service_node_key_as_str, uint64_t expiration_timestamp, const cryptonote::account_public_address& address, uint32_t priority, const std::vector<uint64_t >& portions, const std::vector<uint8_t>& extra, std::set<uint32_t>& subaddr_indices, bool autostake);
-	bool stake_main(const crypto::public_key& service_node_key, const cryptonote::address_parse_info& parse_info, uint32_t priority, std::set<uint32_t>& subaddr_indices, uint64_t amount, double amount_fraction, bool autostake);
+    bool register_service_node_main(const std::vector<std::string>& service_node_key_as_str, uint64_t expiration_timestamp, const cryptonote::account_public_address& address, uint32_t priority, const std::vector<uint64_t>& portions, const std::vector<uint8_t>& extra, std::set<uint32_t>& subaddr_indices);
 
     uint64_t get_daemon_blockchain_height(std::string& err);
     bool try_connect_to_daemon(bool silent = false, uint32_t* version = nullptr);
@@ -375,6 +380,7 @@ namespace cryptonote
     uint64_t m_restore_height;  // optional
     bool m_do_not_relay;
     bool m_use_english_language_names;
+    bool m_has_locked_key_images;
 
     epee::console_handlers_binder m_cmd_binder;
 

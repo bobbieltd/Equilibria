@@ -585,7 +585,12 @@ namespace cryptonote
      * @param return-by-reference base how many outputs of that amount are before the stated distribution
      */
     bool get_output_distribution(uint64_t amount, uint64_t from_height, uint64_t to_height, uint64_t &start_height, std::vector<uint64_t> &distribution, uint64_t &base) const;
-
+    /**
+     * @brief gets global output indexes that should not be used, i.e. registration tx outputs
+     *
+     * @param return-by-reference blacklist global indexes of rct outputs to ignore
+     */
+    bool get_output_blacklist(std::vector<uint64_t> &blacklist) const;
     /**
      * @brief gets the global indices for outputs from a given transaction
      *
@@ -1048,10 +1053,10 @@ namespace cryptonote
     /**
     * @brief add a hook for processing new blocks and rollbacks for reorgs
     */
-   void hook_block_added(BlockAddedHook& block_added_hook);
-   void hook_blockchain_detached(BlockchainDetachedHook& blockchain_detached_hook);
-   void hook_init(InitHook& init_hook);
-   void hook_validate_miner_tx(ValidateMinerTxHook& validate_miner_tx_hook);
+    void hook_block_added        (BlockAddedHook& hook)         { m_block_added_hooks.push_back(&hook); }
+    void hook_blockchain_detached(BlockchainDetachedHook& hook) { m_blockchain_detached_hooks.push_back(&hook); }
+    void hook_init               (InitHook& hook)               { m_init_hooks.push_back(&hook); }
+    void hook_validate_miner_tx  (ValidateMinerTxHook& hook)    { m_validate_miner_tx_hooks.push_back(&hook); }
 
     /**
      * @brief returns the timestamps of the last N blocks
