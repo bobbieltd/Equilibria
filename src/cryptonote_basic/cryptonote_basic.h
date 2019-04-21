@@ -518,22 +518,20 @@ namespace cryptonote
   //---------------------------------------------------------------
   inline enum transaction_prefix::version transaction_prefix::get_max_version_for_hf(int hf_version)
   {
-    if (hf_version >= cryptonote::network_version_7 && hf_version <= cryptonote::network_version_8)
+    if (hf_version < 4)
+      return transaction::version_1;
+    if (hf_version < 5)
       return transaction::version_2;
-
-    if (hf_version >= cryptonote::network_version_9_service_nodes && hf_version <= cryptonote::network_version_10_bulletproofs)
-      return transaction::version_3_per_output_unlock_times;
 
     return transaction::version_4_tx_types;
   }
 
   inline enum transaction_prefix::version transaction_prefix::get_min_version_for_hf(int hf_version)
   {
-    if (hf_version >= cryptonote::network_version_7 && hf_version <= cryptonote::network_version_9_service_nodes)
+    if (hf_version < 4)
+      return transaction::version_1;
+    if (hf_version < 5)
       return transaction::version_2;
-
-    if (hf_version == cryptonote::network_version_10_bulletproofs)
-      return transaction::version_3_per_output_unlock_times;
 
     return transaction::version_4_tx_types;
   }

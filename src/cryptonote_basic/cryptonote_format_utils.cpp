@@ -642,22 +642,20 @@ namespace cryptonote
   {
     return get_additional_tx_pub_keys_from_extra(tx.extra);
   }
-  //---------------------------------------------------------------
   static bool add_tx_extra_field_to_tx_extra(std::vector<uint8_t>& tx_extra, tx_extra_field &field)
-  {
-    // convert to variant
-    tx_extra_field field = tx_extra_additional_pub_keys{ additional_pub_keys };
-    // serialize
-    std::ostringstream oss;
-    binary_archive<true> ar(oss);
-    if (!::do_serialize(ar, field))
-       return false;
-    std::string tx_extra_str = oss.str();
-    size_t pos = tx_extra.size();
-    tx_extra.resize(tx_extra.size() + tx_extra_str.size());
-    memcpy(&tx_extra[pos], tx_extra_str.data(), tx_extra_str.size());
-    return true;
-  }
+{
+  std::ostringstream oss;
+  binary_archive<true> ar(oss);
+  if (!::do_serialize(ar, field))
+    return false;
+
+  std::string tx_extra_str = oss.str();
+  size_t pos = tx_extra.size();
+  tx_extra.resize(tx_extra.size() + tx_extra_str.size());
+  memcpy(&tx_extra[pos], tx_extra_str.data(), tx_extra_str.size());
+
+  return true;
+}
   //---------------------------------------------------------------
   bool add_additional_tx_pub_keys_to_extra(std::vector<uint8_t>& tx_extra, const std::vector<crypto::public_key>& additional_pub_keys)
   {
@@ -1135,21 +1133,21 @@ bool get_tx_key_image_proofs_from_tx_extra(const std::vector<uint8_t>& tx_extra,
 	  return buf;
   }
   //---------------------------------------------------------------
-  char const *print_vote_verification_context(vote_verification_context const &vvc, triton::service_node_deregister::vote const *vote)
+  char const *print_vote_verification_context(vote_verification_context const &vvc, service_nodes::service_node_deregister::vote const *vote)
   {
-	  static char buf[2048];
-	  buf[0] = 0;
+    static char buf[2048];
+    buf[0] = 0;
 
-	  char *bufPtr = buf;
-	  char *bufEnd = buf + sizeof(buf);
-	  if (vvc.m_invalid_block_height)              bufPtr += snprintf(bufPtr, bufEnd - bufPtr, "Invalid block height: %s, ", vote ? std::to_string(vote->block_height).c_str() : "??");
-	  if (vvc.m_duplicate_voters)                  bufPtr += snprintf(bufPtr, bufEnd - bufPtr, "Voters quorum index was duplicated: %s, ", vote ? std::to_string(vote->voters_quorum_index).c_str() : "??");
-	  if (vvc.m_voters_quorum_index_out_of_bounds) bufPtr += snprintf(bufPtr, bufEnd - bufPtr, "Voters quorum index out of bounds: %s, ", vote ? std::to_string(vote->voters_quorum_index).c_str() : "??");
-	  if (vvc.m_service_node_index_out_of_bounds)  bufPtr += snprintf(bufPtr, bufEnd - bufPtr, "Service node index out of bounds: %s, ", vote ? std::to_string(vote->service_node_index).c_str() : "??");
-	  if (vvc.m_signature_not_valid)               bufPtr += snprintf(bufPtr, bufEnd - bufPtr, "Signature not valid, ");
-	  if (vvc.m_added_to_pool)                     bufPtr += snprintf(bufPtr, bufEnd - bufPtr, "Added to pool, ");
-	  if (vvc.m_full_tx_deregister_made)           bufPtr += snprintf(bufPtr, bufEnd - bufPtr, "Full TX deregister made, ");
-	  if (vvc.m_not_enough_votes)                  bufPtr += snprintf(bufPtr, bufEnd - bufPtr, "Not enough votes, ");
+    char *bufPtr = buf;
+    char *bufEnd = buf + sizeof(buf);
+    if (vvc.m_invalid_block_height)              bufPtr += snprintf(bufPtr, bufEnd - bufPtr, "Invalid block height: %s, ",              vote ? std::to_string(vote->block_height).c_str() : "??");
+    if (vvc.m_duplicate_voters)                  bufPtr += snprintf(bufPtr, bufEnd - bufPtr, "Voters quorum index was duplicated: %s, ",vote ? std::to_string(vote->voters_quorum_index).c_str() : "??");
+    if (vvc.m_voters_quorum_index_out_of_bounds) bufPtr += snprintf(bufPtr, bufEnd - bufPtr, "Voters quorum index out of bounds: %s, ", vote ? std::to_string(vote->voters_quorum_index).c_str() : "??");
+    if (vvc.m_service_node_index_out_of_bounds)  bufPtr += snprintf(bufPtr, bufEnd - bufPtr, "Service node index out of bounds: %s, ",  vote ? std::to_string(vote->service_node_index).c_str() : "??");
+    if (vvc.m_signature_not_valid)               bufPtr += snprintf(bufPtr, bufEnd - bufPtr, "Signature not valid, ");
+    if (vvc.m_added_to_pool)                     bufPtr += snprintf(bufPtr, bufEnd - bufPtr, "Added to pool, ");
+    if (vvc.m_full_tx_deregister_made)           bufPtr += snprintf(bufPtr, bufEnd - bufPtr, "Full TX deregister made, ");
+    if (vvc.m_not_enough_votes)                  bufPtr += snprintf(bufPtr, bufEnd - bufPtr, "Not enough votes, ");
 
     if (bufPtr != buf)
     {
@@ -1157,7 +1155,7 @@ bool get_tx_key_image_proofs_from_tx_extra(const std::vector<uint8_t>& tx_extra,
       if (last_comma[0] == ',') last_comma[0] = 0;
     }
 
-	  return buf;
+    return buf;
   }
   //---------------------------------------------------------------
   void get_blob_hash(const epee::span<const char>& blob, crypto::hash& res)

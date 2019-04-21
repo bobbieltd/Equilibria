@@ -2755,17 +2755,20 @@ namespace cryptonote
 
   struct COMMAND_RPC_GET_SERVICE_NODES
   {
-	  struct request
-	  {
-		  std::vector<std::string> service_node_pubkeys; // pass empty vector to get all the service nodes
-		  BEGIN_KV_SERIALIZE_MAP()
-			  KV_SERIALIZE(service_node_pubkeys);
-		  END_KV_SERIALIZE_MAP()
-	  };
+    struct request
+    {
+      std::vector<std::string> service_node_pubkeys; // pass empty vector to get all the service nodes
+      bool include_json;
 
-	  struct response
-	  {
-		  struct contribution
+      BEGIN_KV_SERIALIZE_MAP()
+        KV_SERIALIZE(service_node_pubkeys);
+        KV_SERIALIZE(include_json);
+      END_KV_SERIALIZE_MAP()
+    };
+
+    struct response
+    {
+      struct contribution
       {
         std::string key_image;
         std::string key_image_pub_key;
@@ -2779,59 +2782,63 @@ namespace cryptonote
       };
 
       struct contributor
-			  uint64_t amount;
-			  uint64_t reserved;
-			  std::string address;
+      {
+        uint64_t amount;
+        uint64_t reserved;
+        std::string address;
         std::vector<contribution> locked_contributions;
 
-			  BEGIN_KV_SERIALIZE_MAP()
-				  KV_SERIALIZE(amount)
-				  KV_SERIALIZE(reserved)
-				  KV_SERIALIZE(address)
-           KV_SERIALIZE(locked_contributions)
-			  END_KV_SERIALIZE_MAP()
-		  };
+        BEGIN_KV_SERIALIZE_MAP()
+          KV_SERIALIZE(amount)
+          KV_SERIALIZE(reserved)
+          KV_SERIALIZE(address)
+          KV_SERIALIZE(locked_contributions)
+        END_KV_SERIALIZE_MAP()
+      };
 
-		  struct entry
-		  {
+      struct entry
+      {
         std::string               service_node_pubkey;
-      uint64_t                  registration_height;
-      uint64_t                  requested_unlock_height;
-      uint64_t                  last_reward_block_height;
-      uint32_t                  last_reward_transaction_index;
-      uint64_t                  last_uptime_proof;
-      std::vector<contributor>  contributors;
-      uint64_t                  total_contributed;
-      uint64_t                  total_reserved;
-      uint64_t                  staking_requirement;
-      uint64_t                  portions_for_operator;
-      std::string               operator_address;
+        uint64_t                  registration_height;
+        uint64_t                  requested_unlock_height;
+        uint64_t                  last_reward_block_height;
+        uint32_t                  last_reward_transaction_index;
+        uint64_t                  last_uptime_proof;
+        std::vector<contributor>  contributors;
+        uint64_t                  total_contributed;
+        uint64_t                  total_reserved;
+        uint64_t                  staking_requirement;
+        uint64_t                  portions_for_operator;
+        std::string               operator_address;
 
-			  BEGIN_KV_SERIALIZE_MAP()
-				  KV_SERIALIZE(service_node_pubkey)
-				  KV_SERIALIZE(registration_height)
-          KV_SERIALIZE(requested_unlock_height)
-				  KV_SERIALIZE(last_reward_block_height)
-				  KV_SERIALIZE(last_reward_transaction_index)
-				  KV_SERIALIZE(last_uptime_proof)
-				  KV_SERIALIZE(contributors)
-				  KV_SERIALIZE(total_contributed)
-				  KV_SERIALIZE(total_reserved)
-				  KV_SERIALIZE(staking_requirement)
-				  KV_SERIALIZE(portions_for_operator)
-				  KV_SERIALIZE(operator_address)
-			  END_KV_SERIALIZE_MAP()
-		  };
+        BEGIN_KV_SERIALIZE_MAP()
+            KV_SERIALIZE(service_node_pubkey)
+            KV_SERIALIZE(registration_height)
+            KV_SERIALIZE(requested_unlock_height)
+            KV_SERIALIZE(last_reward_block_height)
+            KV_SERIALIZE(last_reward_transaction_index)
+            KV_SERIALIZE(last_uptime_proof)
+            KV_SERIALIZE(contributors)
+            KV_SERIALIZE(total_contributed)
+            KV_SERIALIZE(total_reserved)
+            KV_SERIALIZE(staking_requirement)
+            KV_SERIALIZE(portions_for_operator)
+            KV_SERIALIZE(operator_address)
+        END_KV_SERIALIZE_MAP()
+      };
 
-		  std::vector<entry> service_node_states;
-		  std::string        status;
+      std::vector<entry> service_node_states;
+      std::string        status;
+      std::string        as_json;
 
-		  BEGIN_KV_SERIALIZE_MAP()
-			  KV_SERIALIZE(service_node_states)
-			  KV_SERIALIZE(status)
-		  END_KV_SERIALIZE_MAP()
-	  };
+      BEGIN_KV_SERIALIZE_MAP()
+        KV_SERIALIZE(service_node_states)
+        KV_SERIALIZE(status)
+        KV_SERIALIZE(as_json)
+      END_KV_SERIALIZE_MAP()
+    };
   };
+
   struct COMMAND_RPC_GET_STAKING_REQUIREMENT
   {
 	  struct request

@@ -43,7 +43,7 @@ namespace epee
 {
   class wipeable_string;
 }
-namespace triton { namespace service_node_deregister { struct vote; } }
+namespace service_nodes { namespace service_node_deregister { struct vote; } }
 
 namespace cryptonote
 {
@@ -77,8 +77,9 @@ namespace cryptonote
   crypto::public_key get_tx_pub_key_from_extra(const transaction_prefix& tx, size_t pk_index = 0);
   crypto::public_key get_tx_pub_key_from_extra(const transaction& tx, size_t pk_index = 0);
   void add_tx_pub_key_to_extra(transaction& tx, const crypto::public_key& tx_pub_key);
-  void add_tx_pub_key_to_extra(transaction_prefix& tx, const crypto::public_key& tx_pub_key);
-  void add_tx_pub_key_to_extra(std::vector<uint8_t>& tx_extra, const crypto::public_key& tx_pub_key);
+   void add_tx_pub_key_to_extra(transaction_prefix& tx, const crypto::public_key& tx_pub_key);
+   void add_tx_pub_key_to_extra(std::vector<uint8_t>& tx_extra, const crypto::public_key& tx_pub_key);
+
   bool add_service_node_deregister_to_tx_extra(std::vector<uint8_t>& tx_extra, const tx_extra_service_node_deregister& deregistration);
   bool get_service_node_register_from_tx_extra(const std::vector<uint8_t>& tx_extra, tx_extra_service_node_register& registration);
   bool get_service_node_deregister_from_tx_extra(const std::vector<uint8_t>& tx_extra, tx_extra_service_node_deregister& deregistration);
@@ -164,8 +165,8 @@ namespace cryptonote
   std::string get_unit(unsigned int decimal_point = -1);
   std::string print_money(uint64_t amount, unsigned int decimal_point = -1);
 
-  char const *print_tx_verification_context(tx_verification_context const &tvc, transaction const *tx = nullptr);
-  char const *print_vote_verification_context(vote_verification_context const &vvc, triton::service_node_deregister::vote const *vote = nullptr);
+  char const *print_tx_verification_context  (tx_verification_context const &tvc, transaction const *tx = nullptr);
+  char const *print_vote_verification_context(vote_verification_context const &vvc, service_nodes::deregister_vote const *vote = nullptr);
 
   //---------------------------------------------------------------
   template<class t_object>
