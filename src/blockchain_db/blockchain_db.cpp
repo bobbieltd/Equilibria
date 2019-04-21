@@ -200,13 +200,13 @@ void BlockchainDB::add_transaction(const crypto::hash& blk_hash, const std::pair
       cryptonote::tx_out vout = tx.vout[i];
       rct::key commitment = rct::zeroCommit(vout.amount);
       vout.amount = 0;
-      amount_output_indices.push_back(add_output(tx_hash, vout, i, unlock_time,
-        &commitment));
+      amount_output_indices[i] = add_output(tx_hash, vout, i, tx.unlock_time,
+        &commitment);
     }
     else
     {
-      amount_output_indices.push_back(add_output(tx_hash, tx.vout[i], i, unlock_time,
-        tx.version > 1 ? &tx.rct_signatures.outPk[i].mask : NULL));
+      amount_output_indices[i] = add_output(tx_hash, tx.vout[i], i, tx.unlock_time,
+        tx.version > 1 ? &tx.rct_signatures.outPk[i].mask : NULL);
     }
   }
   if (has_blacklisted_outputs)
@@ -372,7 +372,12 @@ uint64_t BlockchainDB::get_output_unlock_time(const uint64_t amount, const uint6
 {
   output_data_t odata = get_output_key(amount, amount_index);
 
-  return odata.unlock_time;
+transaction BlockchainDB::get_pruned_tx(const crypto::hash& h) const
+{
+  transaction tx;
+  if (!get_pruned_tx(h, tx))
+    throw TX_DNE(std::string("pruned tx with hash ").append(epee::string_tools::pod_to_hex(h)).append(" not found in db").c_str());
+  return tx;
 }
 
 void BlockchainDB::reset_stats()
