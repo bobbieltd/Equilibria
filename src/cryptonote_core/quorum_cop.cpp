@@ -121,7 +121,7 @@ namespace service_nodes
 				if (!vote_off_node)
 					continue;
 
-				service_nodes::deregister_vote vote = {};
+				triton::service_node_deregister::vote vote = {};
 				vote.block_height = m_last_height;
 				vote.service_node_index = node_index;
 				vote.voters_quorum_index = my_index_in_quorum;
