@@ -586,8 +586,8 @@ namespace cryptonote
     };
     const difficulty_type fixed_difficulty = command_line::get_arg(vm, arg_fixed_difficulty);
 
-	BlockchainDB *initialized_db = db.release();
-	m_service_node_list.set_db_pointer(initialized_db);
+    BlockchainDB *initialized_db = db.release();
+    m_service_node_list.set_db_pointer(initialized_db);
     m_service_node_list.register_hooks(m_quorum_cop);
 
 
@@ -748,7 +748,7 @@ namespace cryptonote
     bad_semantics_txes_lock.unlock();
 
     uint8_t version = m_blockchain_storage.get_current_hard_fork_version();
-    unsigned int max_tx_version = (version == 1) ? 1 : (version < SERVICE_NODE_VERSION)
+    unsigned int max_tx_version = (version == 1) ? 1 : (version < 5)
       ? transaction::version_2
       : transaction::version_3_per_output_unlock_times;
     if (tx.version == 0 || tx.version > max_tx_version)
@@ -1983,19 +1983,6 @@ bool core::get_service_node_keys(crypto::public_key &pub_key, crypto::secret_key
 	}
 	return m_service_node;
 }
-  //-----------------------------------------------------------------------------------------------
-  bool core::cmd_prepare_sn(const boost::program_options::variables_map& vm, const std::vector<std::string>& args)
-  {
-    bool r = handle_command_line(vm);
-    CHECK_AND_ASSERT_MES(r, false, "Unable to parse command line arguments");
-    r = init_service_node_key();
-    CHECK_AND_ASSERT_MES(r, false, "Failed to create or load service node key");
-    std::string registration;
-    r = service_nodes::make_registration_cmd(get_nettype(), args, m_service_node_pubkey, m_service_node_key, registration, true /*make_friendly*/);
-    CHECK_AND_ASSERT_MES(r, "", tr("Failed to make registration command"));
-    std::cout << registration << std::endl;
-    return true;
-  }
   //-----------------------------------------------------------------------------------------------
   std::time_t core::get_start_time() const
   {

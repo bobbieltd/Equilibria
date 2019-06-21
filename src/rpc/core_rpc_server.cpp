@@ -80,12 +80,10 @@ namespace cryptonote
   bool core_rpc_server::init(
       const boost::program_options::variables_map& vm
       , const bool restricted
-      , const network_type nettype
       , const std::string& port
     )
   {
     m_restricted = restricted;
-    m_nettype = nettype;
     m_net_server.set_threads_prefix("RPC");
 
     auto rpc_config = cryptonote::rpc_args::process(vm);
@@ -180,10 +178,13 @@ namespace cryptonote
     res.rpc_connections_count = get_connections_count();
     res.white_peerlist_size = m_p2p.get_peerlist_manager().get_white_peers_count();
     res.grey_peerlist_size = m_p2p.get_peerlist_manager().get_gray_peers_count();
-    res.mainnet = m_nettype == MAINNET;
-    res.testnet = m_nettype == TESTNET;
-    res.stagenet = m_nettype == STAGENET;
-    res.nettype = m_nettype == MAINNET ? "mainnet" : m_nettype == TESTNET ? "testnet" : m_nettype == STAGENET ? "stagenet" : "fakechain";
+
+    cryptonote::network_type net_type = nettype();
+    res.mainnet = net_type == MAINNET;
+    res.testnet = net_type == TESTNET;
+    res.stagenet = net_type == STAGENET;
+    res.nettype = net_type == MAINNET ? "mainnet" : net_type == TESTNET ? "testnet" : net_type == STAGENET ? "stagenet" : "fakechain";
+
     res.cumulative_difficulty = m_core.get_blockchain_storage().get_db().get_block_cumulative_difficulty(res.height - 1);
     res.block_size_limit = res.block_weight_limit = m_core.get_blockchain_storage().get_current_cumulative_block_weight_limit();
     res.block_size_median = res.block_weight_median = m_core.get_blockchain_storage().get_current_cumulative_block_weight_median();
@@ -814,7 +815,7 @@ namespace cryptonote
     PERF_TIMER(on_start_mining);
     CHECK_CORE_READY();
     cryptonote::address_parse_info info;
-    if(!get_account_address_from_str(info, m_nettype, req.miner_address))
+    if(!get_account_address_from_str(info, nettype(), req.miner_address))
     {
       res.status = "Failed, wrong address";
       LOG_PRINT_L0(res.status);
@@ -888,7 +889,7 @@ namespace cryptonote
       res.speed = lMiner.get_speed();
       res.threads_count = lMiner.get_threads_count();
       const account_public_address& lMiningAdr = lMiner.get_mining_address();
-      res.address = get_account_address_as_str(m_nettype, false, lMiningAdr);
+      res.address = get_account_address_as_str(nettype(), false, lMiningAdr);
     }
 
     res.status = CORE_RPC_STATUS_OK;
@@ -1121,7 +1122,7 @@ namespace cryptonote
 
     cryptonote::address_parse_info info;
 
-    if(!req.wallet_address.size() || !cryptonote::get_account_address_from_str(info, m_nettype, req.wallet_address))
+    if(!req.wallet_address.size() || !cryptonote::get_account_address_from_str(info, nettype(), req.wallet_address))
     {
       error_resp.code = CORE_RPC_ERROR_CODE_WRONG_WALLET_ADDRESS;
       error_resp.message = "Failed to parse wallet address";
@@ -1647,10 +1648,13 @@ namespace cryptonote
     res.rpc_connections_count = get_connections_count();
     res.white_peerlist_size = m_p2p.get_peerlist_manager().get_white_peers_count();
     res.grey_peerlist_size = m_p2p.get_peerlist_manager().get_gray_peers_count();
-    res.mainnet = m_nettype == MAINNET;
-    res.testnet = m_nettype == TESTNET;
-    res.stagenet = m_nettype == STAGENET;
-    res.nettype = m_nettype == MAINNET ? "mainnet" : m_nettype == TESTNET ? "testnet" : m_nettype == STAGENET ? "stagenet" : "fakechain";
+
+    cryptonote::network_type net_type = nettype();
+    res.mainnet = net_type == MAINNET;
+    res.testnet = net_type == TESTNET;
+    res.stagenet = net_type == STAGENET;
+    res.nettype = net_type == MAINNET ? "mainnet" : net_type == TESTNET ? "testnet" : net_type == STAGENET ? "stagenet" : "fakechain";
+
     res.cumulative_difficulty = m_core.get_blockchain_storage().get_db().get_block_cumulative_difficulty(res.height - 1);
     res.block_size_limit = res.block_weight_limit = m_core.get_blockchain_storage().get_current_cumulative_block_weight_limit();
     res.block_size_median = res.block_weight_median = m_core.get_blockchain_storage().get_current_cumulative_block_weight_median();
@@ -2302,13 +2306,59 @@ namespace cryptonote
     res.status = CORE_RPC_STATUS_OK;
     return true;
   }
-  //------------------------------------------------------------------------------------------------------------------------------
-
-  bool core_rpc_server::on_get_service_node_registration_cmd(const COMMAND_RPC_GET_SERVICE_NODE_REGISTRATION_CMD::request& req,
+    //------------------------------------------------------------------------------------------------------------------------------
+   bool core_rpc_server::on_get_service_node_registration_cmd(const COMMAND_RPC_GET_SERVICE_NODE_REGISTRATION_CMD::request& req,
                                                              COMMAND_RPC_GET_SERVICE_NODE_REGISTRATION_CMD::response& res,
                                                              epee::json_rpc::error& error_resp)
   {
     PERF_TIMER(on_get_service_node_registration_cmd);
+
+    std::vector<std::string> args;
+
+    if (req.autostake) {
+      args.push_back("auto");
+    }
+
+    uint64_t staking_requirement = service_nodes::get_staking_requirement(m_core.get_nettype(), m_core.get_current_blockchain_height());
+
+    {
+      uint64_t portions_cut;
+      if (!service_nodes::get_portions_from_percent_str(req.operator_cut, portions_cut))
+      {
+        MERROR("Invalid value: " << req.operator_cut << ". Should be between [0-100]");
+        return false;
+      }
+
+      args.push_back(std::to_string(portions_cut));
+    }
+
+    for (const auto contrib : req.contributions)
+    {
+        uint64_t num_portions = service_nodes::get_portions_to_make_amount(staking_requirement, contrib.amount);
+        args.push_back(contrib.address);
+        args.push_back(std::to_string(num_portions));
+    }
+
+    COMMAND_RPC_GET_SERVICE_NODE_REGISTRATION_CMD_RAW::request req_old;
+    COMMAND_RPC_GET_SERVICE_NODE_REGISTRATION_CMD_RAW::response res_old;
+
+    req_old.args = std::move(args);
+    req_old.make_friendly = false;
+
+    const bool success = on_get_service_node_registration_cmd_raw(req_old, res_old, error_resp);
+
+    res.status = res_old.status;
+    res.registration_cmd = res_old.registration_cmd;
+
+    return success;
+  }
+  //------------------------------------------------------------------------------------------------------------------------------
+
+  bool core_rpc_server::on_get_service_node_registration_cmd_raw(const COMMAND_RPC_GET_SERVICE_NODE_REGISTRATION_CMD_RAW::request& req,
+                                                             COMMAND_RPC_GET_SERVICE_NODE_REGISTRATION_CMD_RAW::response& res,
+                                                             epee::json_rpc::error& error_resp)
+  {
+    PERF_TIMER(on_get_service_node_registration_cmd_raw);
 
     crypto::public_key service_node_pubkey;
     crypto::secret_key service_node_key;
@@ -2318,11 +2368,14 @@ namespace cryptonote
       error_resp.message = "Daemon has not been started in service node mode, please relaunch with --service-node flag.";
       return false;
     }
+    std::string err_msg;
 
-    if (!service_nodes::make_registration_cmd(m_core.get_nettype(), req.args, service_node_pubkey, service_node_key, res.registration_cmd, req.make_friendly))
+    if (!service_nodes::make_registration_cmd(m_core.get_nettype(), req.args, service_node_pubkey, service_node_key, res.registration_cmd, req.make_friendly, err_msg))
     {
       error_resp.code    = CORE_RPC_ERROR_CODE_WRONG_PARAM;
       error_resp.message = "Failed to make registration command";
+      if (err_msg != "")
+        error_resp.message += ": " + err_msg;
       return false;
     }
 

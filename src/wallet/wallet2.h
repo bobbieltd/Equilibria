@@ -303,7 +303,7 @@ namespace tools
         FIELD(m_amount)
         FIELD(m_rct)
         FIELD(m_key_image_known)
-		FIELD(m_key_image_requested)
+		    FIELD(m_key_image_requested)
         FIELD(m_pk_index)
         FIELD(m_subaddr_index)
         FIELD(m_key_image_partial)
@@ -320,7 +320,7 @@ namespace tools
       uint64_t m_block_height;
       uint64_t m_unlock_time;
       uint64_t m_timestamp;
-	  pay_type m_type;
+	    pay_type m_type;
 
       cryptonote::subaddress_index m_subaddr_index;
 
@@ -773,6 +773,7 @@ namespace tools
     // locked & unlocked balance per subaddress of given or current subaddress account
     std::map<uint32_t, uint64_t> balance_per_subaddress(uint32_t subaddr_index_major) const;
     std::map<uint32_t, uint64_t> unlocked_balance_per_subaddress(uint32_t subaddr_index_major) const;
+    std::map<uint32_t, uint64_t> unlocked_balance_per_subaddress_snode(uint32_t subaddr_index_major) const;
     // all locked & unlocked balances of all subaddress accounts
     uint64_t balance_all() const;
     uint64_t unlocked_balance_all() const;
@@ -832,6 +833,7 @@ namespace tools
     void rescan_blockchain(bool hard, bool refresh = true);
     bool is_transfer_unlocked(const transfer_details& td) const;
     bool is_transfer_unlocked(uint64_t unlock_time, uint64_t block_height) const;
+
 
     uint64_t get_last_block_reward() const { return m_last_block_reward; }
 
@@ -1437,14 +1439,14 @@ namespace tools
   };
 }
 BOOST_CLASS_VERSION(tools::wallet2, 26)
-BOOST_CLASS_VERSION(tools::wallet2::transfer_details, 9)
+BOOST_CLASS_VERSION(tools::wallet2::transfer_details, 10)
 BOOST_CLASS_VERSION(tools::wallet2::multisig_info, 1)
 BOOST_CLASS_VERSION(tools::wallet2::multisig_info::LR, 0)
 BOOST_CLASS_VERSION(tools::wallet2::multisig_tx_set, 1)
 BOOST_CLASS_VERSION(tools::wallet2::payment_details, 4)
 BOOST_CLASS_VERSION(tools::wallet2::pool_payment_details, 1)
 BOOST_CLASS_VERSION(tools::wallet2::unconfirmed_transfer_details, 8)
-BOOST_CLASS_VERSION(tools::wallet2::confirmed_transfer_details, 6)
+BOOST_CLASS_VERSION(tools::wallet2::confirmed_transfer_details, 7)
 BOOST_CLASS_VERSION(tools::wallet2::address_book_row, 17)
 BOOST_CLASS_VERSION(tools::wallet2::reserve_proof_entry, 0)
 BOOST_CLASS_VERSION(tools::wallet2::unsigned_tx_set, 0)
@@ -1494,6 +1496,10 @@ namespace boost
           x.m_key_image_partial = false;
           x.m_multisig_k.clear();
           x.m_multisig_info.clear();
+        }
+         if (ver < 10)
+        {
+          x.m_key_image_requested = false;
         }
     }
 
@@ -1576,6 +1582,12 @@ namespace boost
       a & x.m_multisig_info;
       a & x.m_multisig_k;
       a & x.m_key_image_partial;
+        if (ver < 10)
+      {
+        initialize_transfer_details(a, x, ver);
+        return;
+      }
+      a & x.m_key_image_requested;
     }
 
     template <class Archive>
