@@ -871,8 +871,7 @@ union cn_slow_hash_state
 };
 #pragma pack(pop)
 
-#if defined(__aarch64__) && defined(__ARM_FEATURE_CRYPTO)
-
+#if (0)
 /* ARMv8-A optimized with NEON and AES instructions.
  * Copied from the x86-64 AES-NI implementation. It has much the same
  * characteristics as x86-64: there's no 64x64=128 multiplier for vectors,
@@ -1337,7 +1336,7 @@ void cn_slow_hash(const void *data, size_t length, char *hash, int light, int va
       #define state_index(x,div) ((*(uint32_t *) x) & MASK(div))
 
       // Iteration 1
-      j = state_index(a);
+      j = state_index(a,(light?2:1));
       p = &long_state[state_index(a,(light?2:1))];
       aesb_single_round(p, p, a);
       copy_block(c1, p);
@@ -1347,7 +1346,7 @@ void cn_slow_hash(const void *data, size_t length, char *hash, int light, int va
       VARIANT1_1(p);
 
       // Iteration 2
-      j = state_index(c1);
+      j = state_index(c1,(light?2:1));
       p = &long_state[state_index(a,(light?2:1))];
       copy_block(c, p);
 

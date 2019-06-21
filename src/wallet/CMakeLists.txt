@@ -66,7 +66,7 @@ target_link_libraries(wallet
     ${Boost_REGEX_LIBRARY}
   PRIVATE
     ${EXTRA_LIBRARIES})
-
+if(0)
 set(wallet_rpc_sources
   wallet_rpc_server.cpp)
 
@@ -102,7 +102,7 @@ set_property(TARGET wallet_rpc_server
   PROPERTY
     OUTPUT_NAME "triton-wallet-rpc")
 install(TARGETS wallet_rpc_server DESTINATION bin)
-
+endif()
 
 # build and install libwallet_merged only if we building for GUI
 if (BUILD_GUI_DEPS)
@@ -122,16 +122,17 @@ if (BUILD_GUI_DEPS)
             version)
 
     foreach(lib ${libs_to_merge})
-        list(APPEND objlibs $<TARGET_OBJECTS:obj_${lib}>) # matches naming convention in src/CMakeLists.txt
-    endforeach()
-    add_library(wallet_merged STATIC ${objlibs})
-    if(IOS)
-        set(lib_folder lib-${ARCH})
-    else()
-        set(lib_folder lib)
-    endif()
-    install(TARGETS wallet_merged
-        ARCHIVE DESTINATION ${lib_folder})
-endif()
+         list(APPEND objlibs $<TARGET_OBJECTS:obj_${lib}>) # matches naming convention in src/CMakeLists.txt
+     endforeach()
+     add_library(wallet_merged STATIC ${objlibs})
+     if(IOS)
+         set(lib_folder lib-${ARCH})
+     else()
+         set(lib_folder lib)
+     endif()
+     install(TARGETS wallet_merged
+         ARCHIVE DESTINATION ${lib_folder})
 
-add_subdirectory(api)
+ endif()
+
+ add_subdirectory(api)
