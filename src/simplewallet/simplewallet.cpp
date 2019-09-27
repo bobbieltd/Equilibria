@@ -5343,6 +5343,11 @@ bool simple_wallet::make_burn_transaction(const std::vector<std::string> &args_)
   }
   
   uint64_t USDE_estimate = (res.last_ribbon_red * amount) / 100;
+
+  if(res.last_ribbon_red == 0){
+    fail_msg_writer() << "Ribbon red has not been created yet! Please wait until block 1470!";
+    return true;
+  }
   
   std::string prompt = std::string("You will exchange ") + std::string(args_[0]) + std::string(" XEQ for ~$") + std::string(print_money(USDE_estimate)) + std::string(" USDE @ the rate of $") + print_money(res.last_ribbon_red * 100) + std::string(" per XEQ \nIs this okay?  (Y/Yes/N/No): ");
   std::string accepted = input_line(prompt);
