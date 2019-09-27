@@ -1499,6 +1499,7 @@ namespace cryptonote
     response.nonce = blk.nonce;
     response.ribbon_blue = blk.ribbon_blue;
     response.ribbon_red = blk.ribbon_red;
+    response.ribbon_volume = blk.ribbon_volume;
     response.orphan_status = orphan_status;
     response.height = height;
     response.depth = m_core.get_current_blockchain_height() - height - 1;
@@ -1849,8 +1850,10 @@ namespace cryptonote
     res.rpc_connections_count = get_connections_count();
     res.white_peerlist_size = m_p2p.get_peerlist_manager().get_white_peers_count();
     res.grey_peerlist_size = m_p2p.get_peerlist_manager().get_gray_peers_count();
-    res.last_ribbon_blue = m_core.get_blockchain_storage().get_current_hard_fork_version() > 6 ? m_core.get_top_block_ribbon_data().first : 0;
-    res.last_ribbon_red = m_core.get_blockchain_storage().get_current_hard_fork_version() > 6 ? m_core.get_top_block_ribbon_data().second : 0;
+    cryptonote::ribbon_data_core last_ribbon_data = m_core.get_top_block_ribbon_data();
+    res.last_ribbon_blue = m_core.get_blockchain_storage().get_current_hard_fork_version() > 6 ? last_ribbon_data.ribbon_blue : 0;
+    res.last_ribbon_red = m_core.get_blockchain_storage().get_current_hard_fork_version() > 6 ? last_ribbon_data.ribbon_red : 0;
+    res.last_ribbon_volume = m_core.get_blockchain_storage().get_current_hard_fork_version() > 6 ? last_ribbon_data.ribbon_volume : 0;
     res.already_generated_coins = m_core.get_blockchain_storage().get_db().get_block_already_generated_coins(res.height - 1);
     res.total_burned_coins = m_core.get_blockchain_storage().get_db().get_block_total_burned_coins(res.height - 1);
 

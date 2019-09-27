@@ -61,6 +61,13 @@ namespace cryptonote
       const size_t long_term_block_weight_window;
    };
 
+
+  struct ribbon_data_core {
+		uint64_t ribbon_red;
+		uint64_t ribbon_blue;
+		uint64_t ribbon_volume;
+	};
+
   extern const command_line::arg_descriptor<std::string, false, true, 2> arg_data_dir;
   extern const command_line::arg_descriptor<bool, false> arg_testnet_on;
   extern const command_line::arg_descriptor<bool, false> arg_stagenet_on;
@@ -131,7 +138,7 @@ namespace cryptonote
      *
      * @return ribbon_blue, ribbon_red
      */
-     std::pair<uint64_t, uint64_t> get_top_block_ribbon_data();
+     ribbon_data_core get_top_block_ribbon_data();
     /**
      * @brief stores trade history in database
      *

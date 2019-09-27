@@ -1045,6 +1045,7 @@ namespace cryptonote
       bool update_available;
       uint64_t last_ribbon_blue;
       uint64_t last_ribbon_red;
+      uint64_t last_ribbon_volume;
       uint64_t already_generated_coins;
       uint64_t total_burned_coins;
 
@@ -1082,6 +1083,7 @@ namespace cryptonote
         KV_SERIALIZE(database_size)
         KV_SERIALIZE(update_available)
         KV_SERIALIZE(last_ribbon_blue)
+        KV_SERIALIZE(last_ribbon_volume)
         KV_SERIALIZE(last_ribbon_red)
         KV_SERIALIZE(already_generated_coins)
         KV_SERIALIZE(total_burned_coins)
@@ -1276,6 +1278,7 @@ namespace cryptonote
       uint32_t nonce;
       uint64_t ribbon_blue;
       uint64_t ribbon_red;
+      uint64_t ribbon_volume;
       bool orphan_status;
       uint64_t height;
       uint64_t depth;
@@ -1297,6 +1300,7 @@ namespace cryptonote
         KV_SERIALIZE(nonce)
         KV_SERIALIZE(ribbon_blue)
         KV_SERIALIZE(ribbon_red)
+        KV_SERIALIZE(ribbon_volume)
         KV_SERIALIZE(orphan_status)
         KV_SERIALIZE(height)
         KV_SERIALIZE(depth)
