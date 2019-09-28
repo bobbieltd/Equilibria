@@ -1372,7 +1372,7 @@ bool Blockchain::create_block_template(block& b, const account_public_address& m
   if (b.major_version > 5)
   {
     std::pair<uint64_t, uint64_t> last_winner_ribbon_data = m_service_node_list.get_ribbon_data(m_service_node_list.select_winner(b.prev_id), height - 2);
-    MGINFO_GREEN("Winner Ribbon Data: " << last_winner_ribbon_data.first);
+    MGINFO_GREEN("Ribbon price winner for next block (" << height << "): " << ((float)last_winner_ribbon_data.first / 1000));
     
     b.ribbon_blue = last_winner_ribbon_data.first;
     b.ribbon_volume = last_winner_ribbon_data.second;
