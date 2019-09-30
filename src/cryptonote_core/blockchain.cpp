@@ -1422,7 +1422,7 @@ bool Blockchain::create_block_template(block& b, const account_public_address& m
     }
 
   }
-  
+
   }
 
   
@@ -3673,7 +3673,6 @@ bool Blockchain::get_input_txs_from_txin(txin_to_key txin, std::vector<transacti
   {
     tx_out_index tx_oi = m_db->get_output_tx_and_index(txin.amount, absolute_offsets[i]);
     tx_hashes.push_back(tx_oi.first);
-    std::cout << tx_oi.first << std::endl;
   }
   
 
