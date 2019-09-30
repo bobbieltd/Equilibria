@@ -5342,7 +5342,7 @@ bool simple_wallet::make_burn_transaction(const std::vector<std::string> &args_)
     return true;
   }
   
-  uint64_t USDE_estimate = (res.last_ribbon_red * amount) / 100;
+  uint64_t USDE_estimate = (res.last_ribbon_red * amount) / 1000;
 
   if(res.last_ribbon_red == 0){
     fail_msg_writer() << "Ribbon red has not been created yet! Please wait until block 1470!";
