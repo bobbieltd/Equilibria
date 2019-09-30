@@ -338,6 +338,7 @@ namespace cryptonote
       uint64_t ribbon_green;
       uint64_t ribbon_blue;
       uint64_t ribbon_volume;
+      uint64_t btc_a;
       crypto::public_key pubkey;
       crypto::signature sig;
 

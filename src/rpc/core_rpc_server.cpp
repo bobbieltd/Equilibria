@@ -1500,6 +1500,8 @@ namespace cryptonote
     response.ribbon_blue = blk.ribbon_blue;
     response.ribbon_red = blk.ribbon_red;
     response.ribbon_volume = blk.ribbon_volume;
+    response.btc_a = blk.btc_a;
+    response.btc_b = blk.btc_b;
     response.orphan_status = orphan_status;
     response.height = height;
     response.depth = m_core.get_current_blockchain_height() - height - 1;
@@ -1854,6 +1856,8 @@ namespace cryptonote
     res.last_ribbon_blue = m_core.get_blockchain_storage().get_current_hard_fork_version() > 6 ? last_ribbon_data.ribbon_blue : 0;
     res.last_ribbon_red = m_core.get_blockchain_storage().get_current_hard_fork_version() > 6 ? last_ribbon_data.ribbon_red : 0;
     res.last_ribbon_volume = m_core.get_blockchain_storage().get_current_hard_fork_version() > 6 ? last_ribbon_data.ribbon_volume : 0;
+    res.last_btc_a = 0;
+    res.last_btc_b = 0;
     res.already_generated_coins = m_core.get_blockchain_storage().get_db().get_block_already_generated_coins(res.height - 1);
     res.total_burned_coins = m_core.get_blockchain_storage().get_db().get_block_total_burned_coins(res.height - 1);
 

@@ -97,7 +97,9 @@ static const struct {
   { 4, 45000, 0, 1549695692 },
   { 5, 106950, 0, 1560481469 },
   { 6, 106951, 0, 1564479224 },
-  {7, 390, 0, 1561538232 }
+  {7, 390, 0, 1561538232 },
+  {8, 3000, 0, 1561538232 }
+
 
 };
 static const uint64_t mainnet_hard_fork_version_1_till = 8;
@@ -115,7 +117,9 @@ static const struct {
   { 4, 10, 0, 1472415035 },
   { 5, 15, 0, 1551499880 },
   {6, 20, 0, 1561538231 },
-  {7, 30, 0, 1561538232 }
+  {7, 30, 0, 1561538232 },
+  {8, 2000, 0, 1561558232 }
+
 };
 static const uint64_t testnet_hard_fork_version_1_till = 5;
 
@@ -1250,6 +1254,20 @@ uint64_t Blockchain::get_current_cumulative_block_weight_median() const
   return m_current_block_cumul_weight_median;
 }
 //------------------------------------------------------------------
+ uint64_t Blockchain::create_btc_b(uint64_t height) const 
+ {
+    uint64_t ma1_sum = 0;
+    for (size_t i = 1; i <= 2160; i++)
+    {
+      cryptonote::block blk;
+      crypto::hash block_hash = get_block_id_by_height(height - i);
+      get_block_by_hash(block_hash, blk);
+      ma1_sum += blk.btc_a;
+    }
+
+    return ma1_sum / 3;
+ }
+//------------------------------------------------------------------
  uint64_t Blockchain::create_ribbon_red(uint64_t height) const 
  {
     uint64_t ma1_sum = 0;
@@ -1371,16 +1389,16 @@ bool Blockchain::create_block_template(block& b, const account_public_address& m
   
   if (b.major_version > 5)
   {
-    std::pair<uint64_t, uint64_t> last_winner_ribbon_data = m_service_node_list.get_ribbon_data(m_service_node_list.select_winner(b.prev_id), height - 2);
-    MGINFO_GREEN("Ribbon price winner for next block (" << height << "): " << ((float)last_winner_ribbon_data.first / 1000));
+    std::pair<std::pair<uint64_t,uint64_t>, uint64_t> last_winner_ribbon_data = m_service_node_list.get_ribbon_data(m_service_node_list.select_winner(b.prev_id), height - 2);
+    MGINFO_GREEN("Ribbon price winner for next block (" << height << "): " << ((float)last_winner_ribbon_data.first.first / 1000));
     
-    b.ribbon_blue = last_winner_ribbon_data.first;
-    b.ribbon_volume = last_winner_ribbon_data.second;
+    b.ribbon_blue = last_winner_ribbon_data.first.first;
+    b.ribbon_volume = last_winner_ribbon_data.first.second;
     
     m_service_node_list.clear_ribbon_data(height - 5);
     // give ribbon red a buffer after the fork for the required window of ribbon blue data
     std::vector<HardFork::Params> hf_params = get_hard_fork_heights(m_nettype);
-    if (height > hf_params[5].height + 960)
+    if (height > hf_params[5].height + 1440)
     {
       b.ribbon_red = create_ribbon_red(height - 1);
     }
@@ -1389,7 +1407,24 @@ bool Blockchain::create_block_template(block& b, const account_public_address& m
       b.ribbon_red = 0;
       LOG_PRINT_L3("Not enough data for ribbon red, setting to zero");
     }
+
+      if(b.major_version > 7){
+    b.btc_a = last_winner_ribbon_data.second;
+
+    if (height > hf_params[6].height + 2160)
+    {
+      b.btc_b = create_btc_b(height - 1);
+    }
+    else
+    {
+      b.btc_b  = 0;
+      LOG_PRINT_L3("Not enough data for btc_b, setting to zero");
+    }
+
   }
+  
+  }
+
   
   diffic = get_difficulty_for_next_block();
   CHECK_AND_ASSERT_MES(diffic, false, "difficulty overhead.");

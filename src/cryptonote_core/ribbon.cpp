@@ -55,73 +55,6 @@ std::vector<exchange_trade> ribbon_protocol::trades_during_latest_1_block()
   return result;
 }
 
-uint64_t ribbon_protocol::create_ribbon_red(uint64_t height){
-    uint64_t ma1_sum = 0;
-    uint64_t ma1_vol_sum = 0;
-    for (size_t i = 1; i <= 1440; i++)
-    {
-      cryptonote::block blk;
-      crypto::hash block_hash = m_core.get_block_id_by_height(height - i);
-      m_core.get_block_by_hash(block_hash, blk);
-      ma1_sum += (blk.ribbon_volume * blk.ribbon_blue);
-      ma1_vol_sum += blk.ribbon_volume;
-    }
-    uint64_t ma1;
-    if(ma1_vol_sum > 0)
-      ma1 = (ma1_sum / ma1_vol_sum);
-    else
-      ma1 = 0;
-    
-    uint64_t ma2_sum = 0;
-    uint64_t ma2_vol_sum = 0;
-    for (size_t i = 1; i <= 720; i++)
-    {
-      cryptonote::block blk;
-      crypto::hash block_hash = m_core.get_block_id_by_height(height - i);
-      m_core.get_block_by_hash(block_hash, blk);
-      ma2_sum += (blk.ribbon_volume * blk.ribbon_blue);
-      ma2_vol_sum += blk.ribbon_volume;
-    }
-    uint64_t ma2;
-    if(ma2_vol_sum > 0)
-      ma2 = (ma2_sum / ma2_vol_sum);
-    else 
-      ma2 = 0;    
-
-    uint64_t ma3_sum = 0;
-    uint64_t ma3_vol_sum = 0;
-    for (size_t i = 1; i <= 360; i++)
-    {
-      cryptonote::block blk;
-      crypto::hash block_hash = m_core.get_block_id_by_height(height - i);
-      m_core.get_block_by_hash(block_hash, blk);
-      ma3_sum += (blk.ribbon_volume * blk.ribbon_blue);
-      ma3_vol_sum += blk.ribbon_volume;
-    }
-     uint64_t ma3;
-    if(ma3_vol_sum > 0)
-      ma3 = (ma3_sum / ma3_vol_sum);
-    
-    uint64_t ma4_sum = 0;
-    uint64_t ma4_vol_sum = 0;
-    for (size_t i = 1; i <= 180; i++)
-    {
-      cryptonote::block blk;
-      crypto::hash block_hash = m_core.get_block_id_by_height(height - i);
-      m_core.get_block_by_hash(block_hash, blk);
-      ma4_sum += (blk.ribbon_volume * blk.ribbon_blue);
-      ma4_vol_sum += blk.ribbon_volume;
-    }
-    uint64_t ma4;
-    if(ma4_vol_sum > 0)
-      ma4 = (ma4_sum / ma4_vol_sum);
-    else 
-      ma4 = 0;
-    
-    return (ma1 + ma2 + ma3 + ma4) / 4;
-}
-
-
 bool get_trades_from_ogre(std::vector<exchange_trade> *trades)
 {
   std::string data = make_curl_http_get(std::string(TRADE_OGRE_API) + std::string("/history/BTC-XEQ"));
@@ -182,92 +115,130 @@ bool get_orders_from_ogre(std::vector<exchange_order> *orders)
   return true;
 }
 
-double get_coinbase_pro_btc_usd()
+std::pair<double, double> get_coinbase_pro_btc_usd()
 {
   std::string data = make_curl_http_get(std::string(COINBASE_PRO) + std::string("/products/BTC-USD/ticker"));
   rapidjson::Document document;
   document.Parse(data.c_str());
-
   double btc_usd = 0;
+  double vol_usd = 0;
   for (size_t i = 0; i < document.Size(); i++)
   {  
     btc_usd = std::stod(document["price"].GetString());
+    vol_usd = std::stod(document["volume"].GetString());
   }
-  return btc_usd;
+  return {btc_usd, vol_usd};
 }
 
-double get_gemini_btc_usd()
+std::pair<double, double> get_gemini_btc_usd()
 {
-  std::string data = make_curl_http_get(std::string(GEMINI_API) + std::string("/trades/btcusd?limit_trades=1"));
+  std::string data = make_curl_http_get(std::string(GEMINI_API) + std::string("/v1/pubticker/btcusd"));
   rapidjson::Document document;
   document.Parse(data.c_str());
   double btc_usd = 0;
+  double vol_usd = 0;
   for (size_t i = 0; i < document.Size(); i++)
   {
-    btc_usd = std::stod(document[0]["price"].GetString());
+    btc_usd = std::stod(document[0]["last"].GetString());;
+    vol_usd = std::stod(document[0]["volume"]["USD"].GetString());;
   }
-  return btc_usd;
+  return {btc_usd, vol_usd};
 }
 
-double get_bitfinex_btc_usd()
+std::pair<double, double> get_bitfinex_btc_usd()
 {
   std::string data = make_curl_http_get(std::string(BITFINEX_API) + std::string("/pubticker/btcusd"));
   rapidjson::Document document;
   document.Parse(data.c_str());
   double btc_usd = 0;
+  double vol_usd = 0;
   for (size_t i = 0; i < document.Size(); i++)
   {
     btc_usd = std::stod(document["last_price"].GetString());
+    vol_usd = std::stod(document["volume"].GetString());
   }
-  return btc_usd;
+  return {btc_usd, vol_usd};
 }
 
-double get_nance_btc_usd()
+std::pair<double, double> get_nance_btc_usd()
 {
-  std::string data = make_curl_http_get(std::string(NANCE_API) + std::string("/ticker/price?symbol=BTCUSDT"));
+  std::string data = make_curl_http_get(std::string(NANCE_API) + std::string("/api/v1/ticker/24hr"));
   rapidjson::Document document;
   document.Parse(data.c_str());
   double btc_usd = 0;
+  double vol_usd = 0;
   for (size_t i = 0; i < document.Size(); i++)
   {
-    btc_usd = std::stod(document["price"].GetString());
+    btc_usd = std::stod(document["lastPrice"].GetString());
+    vol_usd = std::stod(document["quoteVolume"].GetString());
   }
-  return btc_usd;
+  return {btc_usd, vol_usd};
 }
 
-double get_stamp_btc_usd()
+std::pair<double, double> get_stamp_btc_usd()
 {
   std::string data = make_curl_http_get(std::string(STAMP_API) + std::string("/ticker/BTCUSD"));
   rapidjson::Document document;
   document.Parse(data.c_str());
   double btc_usd = 0;
+  double vol_usd = 0;
   for (size_t i = 0; i < document.Size(); i++)
   {
     btc_usd = std::stod(document["last"].GetString());
+    vol_usd = std::stod(document["volume"].GetString());
   }
-  return btc_usd;
+  return {btc_usd, vol_usd};
+}
+
+uint64_t create_bitcoin_a(){
+  std::pair<double, double> gemini_usd = get_gemini_btc_usd();
+  std::pair<double, double> coinbase_pro_usd = get_coinbase_pro_btc_usd();
+  std::pair<double, double> bitfinex_usd = get_bitfinex_btc_usd();
+  std::pair<double, double> nance_usd = get_nance_btc_usd();
+  std::pair<double, double> stamp_usd = get_stamp_btc_usd();
+
+  double t_vol = gemini_usd.second + coinbase_pro_usd.second + bitfinex_usd.second + nance_usd.second + stamp_usd.second;
+  double weighted_values = (gemini_usd.first * gemini_usd.second) + (coinbase_pro_usd.first * coinbase_pro_usd.second) + (bitfinex_usd.first * bitfinex_usd.second) + (nance_usd.first * nance_usd.second) + (stamp_usd.first * stamp_usd.second);
+  
+  return static_cast<uint64_t>(weighted_values / t_vol);
 }
 
 double get_usd_average(){
-  double gemini_usd = get_gemini_btc_usd();
-  double coinbase_pro_usd = get_coinbase_pro_btc_usd();
-  double bitfinex_usd = get_bitfinex_btc_usd();
-  double nance_usd = get_nance_btc_usd();
-  double stamp_usd = get_stamp_btc_usd();
+  std::pair<double, double> gemini_usd = get_gemini_btc_usd();
+  std::pair<double, double> coinbase_pro_usd = get_coinbase_pro_btc_usd();
+  std::pair<double, double> bitfinex_usd = get_bitfinex_btc_usd();
+  std::pair<double, double> nance_usd = get_nance_btc_usd();
+  std::pair<double, double> stamp_usd = get_stamp_btc_usd();
 
   //Sometimes coinbase pro returns 0? Need to look into this.
-  if(coinbase_pro_usd == 0)
-    return (gemini_usd + bitfinex_usd + nance_usd + stamp_usd) / 4;
+  if(coinbase_pro_usd.first == 0)
+    return (gemini_usd.first + bitfinex_usd.first + nance_usd.first + stamp_usd.first) / 4;
 
-  return (gemini_usd + coinbase_pro_usd + bitfinex_usd + nance_usd + stamp_usd) / 5;
+  return (gemini_usd.first + coinbase_pro_usd.first + bitfinex_usd.first + nance_usd.first + stamp_usd.first) / 5;
 }
 
+double ribbon_protocol::get_btc_b(){
+  
+  crypto::hash block_hash = m_core.get_block_id_by_height(m_core.get_current_blockchain_height() - 1);
+  cryptonote::block blk;
+  m_core.get_block_by_hash(block_hash, blk);
+  return static_cast<double>(blk.btc_b);
+}
 
+uint64_t ribbon_protocol::convert_btc_to_usd(double btc)
+{
+  double usd_average = get_btc_b();
+
+  if(usd_average == 0)
+    usd_average = get_usd_average();
+  
+	double usd = usd_average * btc;
+	return static_cast<uint64_t>(usd * 1000); // remove "cents" decimal place and convert to integer
+}
 
 uint64_t convert_btc_to_usd(double btc)
 {
-	double usd_average = get_usd_average();
-	double usd = usd_average * btc;
+	double usd = get_usd_average() * btc;
 	return static_cast<uint64_t>(usd * 1000); // remove "cents" decimal place and convert to integer
 }
 

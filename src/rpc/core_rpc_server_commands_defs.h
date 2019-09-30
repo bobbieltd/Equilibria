@@ -1046,6 +1046,9 @@ namespace cryptonote
       uint64_t last_ribbon_blue;
       uint64_t last_ribbon_red;
       uint64_t last_ribbon_volume;
+      uint64_t last_btc_a;
+      uint64_t last_btc_b;
+
       uint64_t already_generated_coins;
       uint64_t total_burned_coins;
 
@@ -1085,6 +1088,8 @@ namespace cryptonote
         KV_SERIALIZE(last_ribbon_blue)
         KV_SERIALIZE(last_ribbon_volume)
         KV_SERIALIZE(last_ribbon_red)
+        KV_SERIALIZE(last_btc_a)
+        KV_SERIALIZE(last_btc_b)
         KV_SERIALIZE(already_generated_coins)
         KV_SERIALIZE(total_burned_coins)
       END_KV_SERIALIZE_MAP()
@@ -1279,6 +1284,8 @@ namespace cryptonote
       uint64_t ribbon_blue;
       uint64_t ribbon_red;
       uint64_t ribbon_volume;
+      uint64_t btc_a;
+      uint64_t btc_b;
       bool orphan_status;
       uint64_t height;
       uint64_t depth;
@@ -1301,6 +1308,8 @@ namespace cryptonote
         KV_SERIALIZE(ribbon_blue)
         KV_SERIALIZE(ribbon_red)
         KV_SERIALIZE(ribbon_volume)
+        KV_SERIALIZE(btc_a)
+        KV_SERIALIZE(btc_b)
         KV_SERIALIZE(orphan_status)
         KV_SERIALIZE(height)
         KV_SERIALIZE(depth)

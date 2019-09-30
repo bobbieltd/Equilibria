@@ -38,7 +38,8 @@ struct adjusted_liquidity {
 class ribbon_protocol {
   public:
     explicit ribbon_protocol(cryptonote::core& core);
-    uint64_t create_ribbon_red(uint64_t height);
+    double get_btc_b();
+    uint64_t convert_btc_to_usd(double btc);
     std::vector<exchange_trade> trades_during_latest_1_block();
   private:
   	cryptonote::core& m_core;
@@ -56,11 +57,13 @@ std::vector<adjusted_liquidity> get_recent_liquids(double blue);
 
 
 //--BITCOIN USD--
-double get_coinbase_pro_btc_usd();
-double get_gemini_btc_usd();
-double get_bitfinex_btc_usd();
-double get_nance_btc_usd();
-double get_stamp_btc_usd();
+std::pair<double, double> get_coinbase_pro_btc_usd();
+std::pair<double, double> get_gemini_btc_usd();
+std::pair<double, double> get_bitfinex_btc_usd();
+std::pair<double, double> get_nance_btc_usd();
+std::pair<double, double> get_stamp_btc_usd();
+
+uint64_t create_bitcoin_a();
 
 //Price Functions
 double get_usd_average();

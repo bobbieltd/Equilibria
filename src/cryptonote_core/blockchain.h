@@ -720,7 +720,14 @@ namespace cryptonote
      * @return the average price
      */
      uint64_t create_ribbon_red(uint64_t height) const;
-     
+
+     /**
+     * @brief creates btc_b which is a multi moving average calculation of past btc_a values
+     *
+     * @return the average price
+     */
+     uint64_t create_btc_b(uint64_t height) const;
+
     /**
      * @brief gets the difficulty of the block with a given height
      *

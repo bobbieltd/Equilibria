@@ -202,6 +202,11 @@ namespace boost
       a & b.ribbon_red;
       a & b.ribbon_volume;
     }
+    if (b.major_version > 7)
+    {
+      a & b.btc_a;
+      a & b.btc_b;
+    }
     //------------------
     a & b.miner_tx;
     a & b.tx_hashes;
