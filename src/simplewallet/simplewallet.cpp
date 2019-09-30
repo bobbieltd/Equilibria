@@ -4419,7 +4419,7 @@ bool simple_wallet::show_balance_unlocked(bool detailed)
             try {
               uint64_t height = boost::get<uint64_t>(transfer.block);
               std::pair<uint64_t, uint64_t> ribbons_at_height = m_wallet->get_ribbons_at_height(height);
-              USDE_balance += (output.amount * ribbons_at_height.second) / 100;
+              USDE_balance += (output.amount * ribbons_at_height.second) / 1000;
             }
             catch (boost::bad_get) {
               LOG_PRINT_L2("Caught boost::bad_get, it's likely that we're trying to get the height of a transaction that is still in the mempool");
