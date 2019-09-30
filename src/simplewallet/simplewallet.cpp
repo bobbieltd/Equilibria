@@ -5349,7 +5349,7 @@ bool simple_wallet::make_burn_transaction(const std::vector<std::string> &args_)
     return true;
   }
   
-  std::string prompt = std::string("You will exchange ") + std::string(args_[0]) + std::string(" XEQ for ~$") + std::string(print_money(USDE_estimate)) + std::string(" USDE @ the rate of $") + print_money(res.last_ribbon_red * 100) + std::string(" per XEQ \nIs this okay?  (Y/Yes/N/No): ");
+  std::string prompt = std::string("You will exchange ") + std::string(args_[0]) + std::string(" XEQ for ~$") + std::string(print_money(USDE_estimate)) + std::string(" USDE @ the rate of $") + print_money(res.last_ribbon_red * 1000) + std::string(" per XEQ \nIs this okay?  (Y/Yes/N/No): ");
   std::string accepted = input_line(prompt);
   if (std::cin.eof())
   return true;
