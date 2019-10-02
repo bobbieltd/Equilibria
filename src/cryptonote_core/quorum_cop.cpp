@@ -179,7 +179,7 @@ namespace service_nodes
 		return result;
 	}
 	
-	crypto::hash make_ribbon_hash(uint64_t timestamp, uint64_t height, uint64_t ribbon_green, uint64_t ribbon_blue, uint64_t ribbon_volume, crypto::public_key pubkey)
+	crypto::hash make_ribbon_hash(uint64_t timestamp, uint64_t height, uint64_t ribbon_green, uint64_t ribbon_blue, uint64_t ribbon_volume, uint64_t btc_a, crypto::public_key pubkey)
 	{
 		char buf[256] = "RIB";
 		
@@ -188,8 +188,9 @@ namespace service_nodes
 		memcpy(buf + 4 + sizeof(timestamp) + sizeof(height), reinterpret_cast<const void *>(&ribbon_green), sizeof(ribbon_green));
 		memcpy(buf + 4 + sizeof(timestamp) + sizeof(height) + sizeof(ribbon_green), reinterpret_cast<const void *>(&ribbon_blue), sizeof(ribbon_blue));
 		memcpy(buf + 4 + sizeof(timestamp) + sizeof(height) + sizeof(ribbon_green) + sizeof(ribbon_blue), reinterpret_cast<const void *>(&ribbon_volume), sizeof(ribbon_volume));
-		memcpy(buf + 4 + sizeof(timestamp) + sizeof(height) + sizeof(ribbon_green) + sizeof(ribbon_blue) + sizeof(ribbon_volume), reinterpret_cast<const void *>(&pubkey), sizeof(pubkey));
-		
+		memcpy(buf + 4 + sizeof(timestamp) + sizeof(height) + sizeof(ribbon_green) + sizeof(ribbon_blue) + sizeof(ribbon_volume), reinterpret_cast<const void *>(&btc_a), sizeof(btc_a));
+		memcpy(buf + 4 + sizeof(timestamp) + sizeof(height) + sizeof(ribbon_green) + sizeof(ribbon_blue) + sizeof(ribbon_volume) + sizeof(btc_a), reinterpret_cast<const void *>(&pubkey), sizeof(pubkey));
+
 		crypto::hash result;
 		crypto::cn_fast_hash(buf, sizeof(buf), result);
 		return result;
@@ -243,22 +244,17 @@ namespace service_nodes
 	
 	bool quorum_cop::handle_ribbon_data_received(const cryptonote::NOTIFY_RIBBON_DATA::request &data)
 	{
-		uint8_t version = m_core.get_hard_fork_version(data.height);
-
-		crypto::hash hash = make_ribbon_hash(data.timestamp, data.height, data.ribbon_green, data.ribbon_blue, data.ribbon_volume, data.pubkey);
-		if (!crypto::check_signature(hash, data.pubkey, data.sig))
+		uint8_t version = m_core.get_hard_fork_version(data.height - 1);
+		
+		crypto::hash hash = make_ribbon_hash(data.timestamp, data.height, data.ribbon_green, data.ribbon_blue, data.ribbon_volume, data.btc_a, data.pubkey);
+		if (!crypto::check_signature(hash, data.pubkey, data.sig)){
+			std::cout << "Ribbon Signature Failure" << std::endl;
 			return false;
+		}
 		
 		const crypto::public_key& pubkey = data.pubkey;
 		crypto::hash pair_hash = make_ribbon_key_hash(pubkey, data.height);
-		service_nodes::ribbon_data_v2 rd2;
-		if(version < 8)
-		{
-			rd2 = {data.height, data.ribbon_blue, data.ribbon_volume, 0};
-		}else {
-			rd2 = {data.height, data.ribbon_blue, data.ribbon_volume, data.btc_a};
-		}
-		m_ribbon_data_received[pair_hash] = rd2;
+		m_ribbon_data_received[pair_hash] = {data.height, data.ribbon_blue, data.ribbon_volume, data.btc_a};
 		return true;
 	}
 
@@ -299,7 +295,7 @@ namespace service_nodes
 
 		req.pubkey = pubkey;
 
-		crypto::hash hash = make_ribbon_hash(req.timestamp, req.height, req.ribbon_green, req.ribbon_blue, req.ribbon_volume, req.pubkey);
+		crypto::hash hash = make_ribbon_hash(req.timestamp, req.height, req.ribbon_green, req.ribbon_blue, req.ribbon_volume, req.btc_a, req.pubkey);
 		crypto::generate_signature(hash, pubkey, seckey, req.sig);
 		return true;
 	}
