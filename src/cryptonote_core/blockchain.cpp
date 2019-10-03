@@ -1391,7 +1391,7 @@ bool Blockchain::create_block_template(block& b, const account_public_address& m
   {
     std::vector<HardFork::Params> hf_params = get_hard_fork_heights(m_nettype);
     std::pair<std::pair<uint64_t,uint64_t>, uint64_t> last_winner_ribbon_data = m_service_node_list.get_ribbon_data(m_service_node_list.select_winner(b.prev_id), height - 2);
-    MGINFO_GREEN("Ribbon price winner for next block (" << height << "): " << ((float)last_winner_ribbon_data.first.first / 1000));
+    MGINFO_GREEN("Ribbon price winner for next block (" << height << "): " << ((float)last_winner_ribbon_data.first.first / 1000) << "! Bitcoin Price winner for next block (" << height << "): " << last_winner_ribbon_data.second);
     
 
     if (last_winner_ribbon_data.second == 0 || last_winner_ribbon_data.first.first == 0)
@@ -1402,23 +1402,12 @@ bool Blockchain::create_block_template(block& b, const account_public_address& m
       std::pair<std::pair<uint64_t,uint64_t>, uint64_t> random_ribbon_data = m_service_node_list.get_ribbon_data(random_pubkey, height - 3);
 
       if (random_ribbon_data.first.first != 0 || ((random_ribbon_data.first.first != 0 && random_ribbon_data.second != 0) && b.major_version > 7))
-
+      {
         b.ribbon_blue = random_ribbon_data.first.first;
         b.ribbon_volume = last_winner_ribbon_data.first.second;
 
-        if(b.major_version > 7){
+        if(b.major_version > 7)
           b.btc_a = random_ribbon_data.second;
-
-          if (height > hf_params[6].height + 4000)
-          {
-            b.btc_b = create_btc_b(height - 1);
-          }
-          else
-          {
-            b.btc_b  = 0;
-            LOG_PRINT_L3("Not enough data for btc_b, setting to zero");
-          }
-
       }
       else
       {
@@ -1429,25 +1418,13 @@ bool Blockchain::create_block_template(block& b, const account_public_address& m
         {
           std::pair<std::pair<uint64_t,uint64_t>, uint64_t> ribbon_data = m_service_node_list.get_ribbon_data(all_sn_pubkeys[i], height - 3);
           
-          if (random_ribbon_data.first.first != 0 || ((random_ribbon_data.first.first != 0 && random_ribbon_data.second != 0) && b.major_version > 7))
+          if (ribbon_data.first.first != 0 || ((ribbon_data.first.first != 0 && ribbon_data.second != 0) && b.major_version > 7))
           {
-            b.ribbon_blue = random_ribbon_data.first.first;
-            b.ribbon_volume = last_winner_ribbon_data.first.second;
+            b.ribbon_blue = ribbon_data.first.first;
+            b.ribbon_volume = ribbon_data.first.second;
 
-            if(b.major_version > 7){
-              b.btc_a = random_ribbon_data.second;
-
-              if (height > hf_params[6].height + 4000)
-              {
-                b.btc_b = create_btc_b(height - 1);
-              }
-              else
-              {
-                b.btc_b  = 0;
-                LOG_PRINT_L3("Not enough data for btc_b, setting to zero");
-              }
-            }
-
+            if(b.major_version > 7)
+              b.btc_a = ribbon_data.second;
            }
             else if (i == all_sn_pubkeys.size()-1)
            {
@@ -1460,9 +1437,12 @@ bool Blockchain::create_block_template(block& b, const account_public_address& m
     {
       b.ribbon_blue = last_winner_ribbon_data.first.first;
       b.ribbon_volume = last_winner_ribbon_data.first.second;
-      if(b.major_version > 7){
+      if(b.major_version > 7)
         b.btc_a = last_winner_ribbon_data.second;
+    }
 
+
+     if(b.major_version > 7){
         if (height > hf_params[6].height + 4000)
         {
           b.btc_b = create_btc_b(height - 1);
@@ -1472,9 +1452,7 @@ bool Blockchain::create_block_template(block& b, const account_public_address& m
           b.btc_b  = 0;
           LOG_PRINT_L3("Not enough data for btc_b, setting to zero");
         }
-
       }
-    }
 
     m_service_node_list.clear_ribbon_data(height - 5);
     // give ribbon red a buffer after the fork for the required window of ribbon blue data
@@ -1487,7 +1465,6 @@ bool Blockchain::create_block_template(block& b, const account_public_address& m
       b.ribbon_red = 0;
       LOG_PRINT_L3("Not enough data for ribbon red, setting to zero");
     }
-
 
   }
 
@@ -3717,6 +3694,14 @@ uint64_t Blockchain::get_dynamic_base_fee_estimate(uint64_t grace_blocks) const
   const bool per_byte = version < HF_VERSION_PER_BYTE_FEE;
   MDEBUG("Estimating " << grace_blocks << "-block fee at " << print_money(fee) << "/" << (per_byte ? "byte" : "kB"));
   return fee;
+}
+//------------------------------------------------------------------
+// This function checks to see if a tx is burn tx. (Used for wallet)
+bool Blockchain::is_burn_tx(crypto::hash txid) const{
+  bool is_burn_tx;
+  cryptonote::transaction tx = m_db->get_tx(txid);
+  get_is_burn_tx_tag_from_tx_extra(tx.extra, is_burn_tx);
+  return is_burn_tx;
 }
 
 //------------------------------------------------------------------
