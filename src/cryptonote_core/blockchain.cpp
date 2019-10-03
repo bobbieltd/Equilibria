@@ -1389,11 +1389,12 @@ bool Blockchain::create_block_template(block& b, const account_public_address& m
   
   if (b.major_version > 5)
   {
+    std::vector<HardFork::Params> hf_params = get_hard_fork_heights(m_nettype);
     std::pair<std::pair<uint64_t,uint64_t>, uint64_t> last_winner_ribbon_data = m_service_node_list.get_ribbon_data(m_service_node_list.select_winner(b.prev_id), height - 2);
     MGINFO_GREEN("Ribbon price winner for next block (" << height << "): " << ((float)last_winner_ribbon_data.first.first / 1000));
     
 
-    if (random_ribbon_data.second == 0 || random_ribbon_data.first.first == 0)
+    if (last_winner_ribbon_data.second == 0 || last_winner_ribbon_data.first.first == 0)
     {
 
       LOG_PRINT_L2("Last ribbon data not found for last winner at height: " << height-3 << ", looking for info from other service nodes");
@@ -1477,7 +1478,6 @@ bool Blockchain::create_block_template(block& b, const account_public_address& m
 
     m_service_node_list.clear_ribbon_data(height - 5);
     // give ribbon red a buffer after the fork for the required window of ribbon blue data
-    std::vector<HardFork::Params> hf_params = get_hard_fork_heights(m_nettype);
     if (height > hf_params[5].height + 1440)
     {
       b.ribbon_red = create_ribbon_red(height - 1);
