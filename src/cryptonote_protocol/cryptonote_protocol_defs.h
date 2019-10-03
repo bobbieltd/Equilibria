@@ -348,6 +348,7 @@ namespace cryptonote
         KV_SERIALIZE(ribbon_green)
         KV_SERIALIZE(ribbon_blue)
         KV_SERIALIZE(ribbon_volume)
+        KV_SERIALIZE(btc_a)
         KV_SERIALIZE_VAL_POD_AS_BLOB(pubkey)
         KV_SERIALIZE_VAL_POD_AS_BLOB(sig)
       END_KV_SERIALIZE_MAP()
