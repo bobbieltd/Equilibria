@@ -1467,7 +1467,7 @@ bool Blockchain::create_block_template(block& b, const account_public_address& m
     }
 
   }
- 
+
   
   diffic = get_difficulty_for_next_block();
   CHECK_AND_ASSERT_MES(diffic, false, "difficulty overhead.");
@@ -3696,7 +3696,13 @@ uint64_t Blockchain::get_dynamic_base_fee_estimate(uint64_t grace_blocks) const
   return fee;
 }
 //------------------------------------------------------------------
-
+// This function checks to see if a tx is burn tx. (Used for wallet)
+bool Blockchain::is_burn_tx(crypto::hash txid) const{
+  bool is_burn_tx;
+  cryptonote::transaction tx = m_db->get_tx(txid);
+  get_is_burn_tx_tag_from_tx_extra(tx.extra, is_burn_tx);
+  return is_burn_tx;
+}
 
 //------------------------------------------------------------------
 // This function checks to see if a tx is unlocked.  unlock_time is either
