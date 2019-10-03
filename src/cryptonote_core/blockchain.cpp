@@ -1397,9 +1397,9 @@ bool Blockchain::create_block_template(block& b, const account_public_address& m
     if (last_winner_ribbon_data.second == 0 || last_winner_ribbon_data.first.first == 0)
     {
 
-      LOG_PRINT_L2("Last ribbon data not found for last winner at height: " << height-3 << ", looking for info from other service nodes");
+      MGINFO_GREEN("Last ribbon data not found for last winner at height: " << height-3 << ", looking for info from other service nodes");
       crypto::public_key random_pubkey = m_service_node_list.get_random_service_node_pubkey();
-      std::pair<std::pair<uint64_t,uint64_t>, uint64_t> random_ribbon_data = m_service_node_list.get_ribbon_data(random_pubkey, height - 3);
+      std::pair<std::pair<uint64_t,uint64_t>, uint64_t> random_ribbon_data = m_service_node_list.get_ribbon_data(random_pubkey, height - 2);
 
       if (random_ribbon_data.first.first != 0 || ((random_ribbon_data.first.first != 0 && random_ribbon_data.second != 0) && b.major_version > 7))
       {
@@ -1416,7 +1416,7 @@ bool Blockchain::create_block_template(block& b, const account_public_address& m
 
         for (size_t i = 0; i < all_sn_pubkeys.size(); i++)
         {
-          std::pair<std::pair<uint64_t,uint64_t>, uint64_t> ribbon_data = m_service_node_list.get_ribbon_data(all_sn_pubkeys[i], height - 3);
+          std::pair<std::pair<uint64_t,uint64_t>, uint64_t> ribbon_data = m_service_node_list.get_ribbon_data(all_sn_pubkeys[i], height - 2);
           
           if (ribbon_data.first.first != 0 || ((ribbon_data.first.first != 0 && ribbon_data.second != 0) && b.major_version > 7))
           {
@@ -1428,7 +1428,7 @@ bool Blockchain::create_block_template(block& b, const account_public_address& m
            }
             else if (i == all_sn_pubkeys.size()-1)
            {
-            LOG_PRINT_L2("No ribbon data for height " << height-3 << "could be found from any service node");
+            MGINFO_GREEN("No ribbon data for height " << height-3 << "could be found from any service node");
            }
         }
       }
