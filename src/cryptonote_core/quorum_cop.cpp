@@ -245,10 +245,6 @@ namespace service_nodes
 	bool quorum_cop::handle_ribbon_data_received(const cryptonote::NOTIFY_RIBBON_DATA::request &data)
 	{		
 		crypto::hash hash = make_ribbon_hash(data.timestamp, data.height, data.ribbon_green, data.ribbon_blue, data.ribbon_volume, data.btc_a, data.pubkey);
-		std::cout << "Handle_ribbon_data_btc: " << data.btc_a << std::endl;
-		std::cout << "Handle_ribbon_data_height: " << data.height << std::endl;
-		std::cout << "Handle_ribbon_data_pubkey: " << data.pubkey << std::endl;
-		std::cout << "Handle_ribbon_data_hash: " << hash << std::endl;
 
 		if (!crypto::check_signature(hash, data.pubkey, data.sig)){
 			std::cout << "Ribbon Signature Failure" << std::endl;
@@ -298,12 +294,7 @@ namespace service_nodes
 
 		req.pubkey = pubkey;
 
-		std::cout << "generate_ribbon_data_btc: " << req.btc_a << std::endl;
-		std::cout << "generate_ribbon_data_height: " << req.height << std::endl;
-		std::cout << "generate_ribbon_data_pubkey: " << req.pubkey << std::endl;
-
 		crypto::hash hash = make_ribbon_hash(req.timestamp, req.height, req.ribbon_green, req.ribbon_blue, req.ribbon_volume, req.btc_a, req.pubkey);
-		std::cout << "generate_ribbon_data_hash: " << hash << std::endl;
 		crypto::generate_signature(hash, pubkey, seckey, req.sig);
 		crypto::hash pair_hash = make_ribbon_key_hash(pubkey, req.height);
 		m_ribbon_data_received[pair_hash] = {req.height, req.ribbon_blue, req.ribbon_volume, req.btc_a};
