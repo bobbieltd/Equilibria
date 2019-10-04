@@ -366,6 +366,15 @@ namespace cryptonote
     bool reset_and_set_genesis_block(const block& b);
 
     /**
+     * @brief gets new ribbon winner
+     *
+     * @param none
+     *
+     * @return winning ribbon data
+     */
+    bool get_first_random_ribbon_data(block& b);
+
+    /**
      * @brief creates a new block to mine against
      *
      * @param b return-by-reference block to be filled in
