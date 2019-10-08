@@ -49,7 +49,6 @@ namespace service_nodes
 	{
 		m_last_height = 0;
 		m_uptime_proof_seen.clear();
-		m_ribbon_data_received.clear();
 	}
 
 	void quorum_cop::blockchain_detached(uint64_t height)
@@ -182,7 +181,6 @@ namespace service_nodes
 	crypto::hash make_ribbon_hash(uint64_t timestamp, uint64_t height, uint64_t ribbon_green, uint64_t ribbon_blue, uint64_t ribbon_volume, uint64_t btc_a, crypto::public_key pubkey)
 	{
 		char buf[256] = "RIB";
-		
 		memcpy(buf + 4, reinterpret_cast<const void *>(&timestamp), sizeof(timestamp));
 		memcpy(buf + 4 + sizeof(timestamp), reinterpret_cast<const void *>(&height), sizeof(height));
 		memcpy(buf + 4 + sizeof(timestamp) + sizeof(height), reinterpret_cast<const void *>(&ribbon_green), sizeof(ribbon_green));
@@ -198,7 +196,7 @@ namespace service_nodes
 	
 	crypto::hash quorum_cop::make_ribbon_key_hash(crypto::public_key pubkey, uint64_t height)
 	{
-		char buf[42];
+		char buf[40];
 		memcpy(buf, reinterpret_cast<const void *>(&pubkey), sizeof(pubkey));
 		memcpy(buf + sizeof(pubkey), reinterpret_cast<const void *>(&height), sizeof(height));
 		crypto::hash result;
@@ -296,8 +294,9 @@ namespace service_nodes
 
 		crypto::hash hash = make_ribbon_hash(req.timestamp, req.height, req.ribbon_green, req.ribbon_blue, req.ribbon_volume, req.btc_a, req.pubkey);
 		crypto::generate_signature(hash, pubkey, seckey, req.sig);
+
 		crypto::hash pair_hash = make_ribbon_key_hash(pubkey, req.height);
-		std::cout << "Pair Hash Generation: " << pair_hash << std::endl;
+		std::cout << "Pair Hash Generation at height (" << req.height << "): " << pair_hash << std::endl;
 		m_ribbon_data_received[pair_hash] = {req.height, req.ribbon_blue, req.ribbon_volume, req.btc_a};
 
 		return true;
@@ -336,17 +335,24 @@ namespace service_nodes
 
     std::pair<std::pair<uint64_t,uint64_t>, uint64_t> quorum_cop::get_ribbon_data(const crypto::public_key &pubkey, uint64_t height)
     {
-	  uint8_t version = m_core.get_hard_fork_version(height);
       CRITICAL_REGION_LOCAL(m_lock);
 	  crypto::hash pair_hash = make_ribbon_key_hash(pubkey, height);
-
+	  std::cout << "Looking for ribbon data for height: " << height << " with pair_hash " << pair_hash << std::endl;
+	  for(auto it = m_ribbon_data_received.cbegin(); it != m_ribbon_data_received.cend(); ++it)
+		{
+			std::cout << it->first << " " << it->second.ribbon_blue << " " << it->second.ribbon_volume << " " << it->second.btc_a << " " << it->second.height << "\n";
+		}
       const auto& it = m_ribbon_data_received.find(pair_hash);
       if (it != m_ribbon_data_received.end())
       {
-		  if(version < 8)
+		  if(m_core.get_hard_fork_version(it->second.height) <= 7)
+		  {
 			return std::make_pair(std::make_pair(it->second.ribbon_blue, it->second.ribbon_volume), 0);
+		  }
 		  else
+		  {
 			return std::make_pair(std::make_pair(it->second.ribbon_blue, it->second.ribbon_volume), it->second.btc_a);
+		  }
       }
       return std::make_pair(std::make_pair(0,0),0);
     }

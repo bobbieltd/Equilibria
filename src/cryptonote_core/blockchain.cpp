@@ -1337,27 +1337,27 @@ uint64_t Blockchain::get_current_cumulative_block_weight_median() const
     return (ma1 + ma2 + ma3 + ma4) / 4;
   }
 
-bool Blockchain::get_first_random_ribbon_data(block& b){
+std::pair<std::pair<uint64_t,uint64_t>, uint64_t> Blockchain::get_first_random_ribbon_data(block& b){
   MGINFO_GREEN("Getting next SN ribbon data as winner failed!");
   std::vector<crypto::public_key> all_sn_pubkeys = m_service_node_list.get_service_nodes_pubkeys();
+  std::pair<std::pair<uint64_t,uint64_t>, uint64_t> winning_data;
   for (size_t i = 0; i <= all_sn_pubkeys.size(); i++)
   {
     std::pair<std::pair<uint64_t,uint64_t>, uint64_t> ribbon_data = m_service_node_list.get_ribbon_data(all_sn_pubkeys[i], m_db->height() - 1);
-    std::cout << "Ribbon Data: " << ribbon_data.second << std::endl;
-    if (ribbon_data.second == 0 && b.major_version <= 7)
+    std::cout << "Bitcoin A: " << ribbon_data.second << std::endl;
+    if(b.major_version > 7 && ribbon_data.second != 0)
     {
-      b.ribbon_blue = ribbon_data.first.first;
-      b.ribbon_volume = ribbon_data.first.second;
+      return ribbon_data;
     }
-    else
+
+    if(b.major_version < 8 && ribbon_data.first.first != 0 && winning_data.first.first == 0)
     {
-      b.ribbon_blue = ribbon_data.first.first;
-      b.ribbon_volume = ribbon_data.first.second;
-      b.btc_a = ribbon_data.second;
-    }
+      return ribbon_data;
+    } 
+
   }
 
-  return true;
+  return winning_data;
 }
 
 //------------------------------------------------------------------
@@ -1416,11 +1416,11 @@ bool Blockchain::create_block_template(block& b, const account_public_address& m
   
     if (last_winner_ribbon_data.second == 0)
     {
-      bool new_winner = get_first_random_ribbon_data(b);
-      if(!new_winner){
-        LOG_ERROR("Creating block template: error: Bitcoin_A Price is 0");
-        return false;
-      }
+      std::pair<std::pair<uint64_t,uint64_t>, uint64_t> new_winner = get_first_random_ribbon_data(b);
+      b.ribbon_blue = new_winner.first.first;
+      b.ribbon_volume = new_winner.first.second;
+      if(b.major_version > 7)
+        b.btc_a = new_winner.second;
     }
     else 
     {

@@ -372,7 +372,7 @@ namespace cryptonote
      *
      * @return winning ribbon data
      */
-    bool get_first_random_ribbon_data(block& b);
+    std::pair<std::pair<uint64_t,uint64_t>, uint64_t> get_first_random_ribbon_data(block& b);
 
     /**
      * @brief creates a new block to mine against
