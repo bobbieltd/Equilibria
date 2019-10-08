@@ -2692,9 +2692,11 @@ namespace cryptonote
     struct response
     {
       std::vector<ribbon_data> ribbons;
+		  std::string status;
 
       BEGIN_KV_SERIALIZE_MAP()
         KV_SERIALIZE(ribbons)
+        KV_SERIALIZE(status)
       END_KV_SERIALIZE_MAP()
     };
   };
