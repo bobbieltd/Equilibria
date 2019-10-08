@@ -2602,7 +2602,7 @@ namespace cryptonote
     
     for(size_t i = req.start_height; i <= req.end_height;i++){
       cryptonote::block blk;
-      if(!m_core.get_blockchain_storage().get_block_by_hash(m_core.get_blockchain_storage().get_block_id_by_height(i), blk, false))
+      if(!m_core.get_blockchain_storage().get_block_by_hash(m_core.get_blockchain_storage().get_block_id_by_height(i), blk))
       {
         std::cout << "Could not get block" << std::endl;
         return false;
