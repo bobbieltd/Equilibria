@@ -297,6 +297,7 @@ namespace service_nodes
 		crypto::hash hash = make_ribbon_hash(req.timestamp, req.height, req.ribbon_green, req.ribbon_blue, req.ribbon_volume, req.btc_a, req.pubkey);
 		crypto::generate_signature(hash, pubkey, seckey, req.sig);
 		crypto::hash pair_hash = make_ribbon_key_hash(pubkey, req.height);
+		std::cout << "Pair Hash Generation: " << pair_hash << std::endl;
 		m_ribbon_data_received[pair_hash] = {req.height, req.ribbon_blue, req.ribbon_volume, req.btc_a};
 
 		return true;
