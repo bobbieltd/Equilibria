@@ -2655,4 +2655,46 @@ namespace cryptonote
 		  END_KV_SERIALIZE_MAP()
 	  };
   };
+
+   struct ribbon_data
+  {
+      uint64_t height;
+      uint64_t ribbon_blue;
+      uint64_t ribbon_red;
+      uint64_t ribbon_volume;
+      uint64_t btc_a;
+      uint64_t btc_b;
+
+      BEGIN_KV_SERIALIZE_MAP()
+        KV_SERIALIZE(height)
+        KV_SERIALIZE(ribbon_blue)
+        KV_SERIALIZE(ribbon_red)
+        KV_SERIALIZE(ribbon_volume)
+        KV_SERIALIZE(btc_a)
+        KV_SERIALIZE(btc_b)
+      END_KV_SERIALIZE_MAP()
+  };
+
+   struct COMMAND_RPC_GET_GROUP_RIBBON_DATA
+  {
+    struct request
+    {
+      uint64_t start_height;
+      uint64_t end_height;
+      BEGIN_KV_SERIALIZE_MAP()
+        KV_SERIALIZE(start_height)
+			  KV_SERIALIZE(end_height)
+      END_KV_SERIALIZE_MAP()
+    };
+
+    struct response
+    {
+      std::vector<ribbon_data> ribbons;
+
+      BEGIN_KV_SERIALIZE_MAP()
+        KV_SERIALIZE(ribbons)
+      END_KV_SERIALIZE_MAP()
+    };
+  };
+
 }
