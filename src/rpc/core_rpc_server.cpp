@@ -2598,17 +2598,17 @@ namespace cryptonote
    //------------------------------------------------------------------------------------------------------------------------------
   bool core_rpc_server::on_get_ribbon_data(const COMMAND_RPC_GET_GROUP_RIBBON_DATA::request& req, COMMAND_RPC_GET_GROUP_RIBBON_DATA::response& res, epee::json_rpc::error& error_resp)
   {
-    
     PERF_TIMER(on_get_ribbon_data);
     
     for(size_t i = req.start_height; i <= req.end_height;i++){
       cryptonote::block blk;
-      if(!m_core.get_block_by_hash(m_core.get_block_id_by_height(i), blk, false)){
+      if(!m_core.get_blockchain_storage().get_block_by_hash(m_core.get_blockchain_storage().get_block_id_by_height(i), blk, false))
+      {
         std::cout << "Could not get block" << std::endl;
         return false;
       }
-
-      res.ribbons.push_back({blk.height, blk.timestamp, blk.ribbon_blue, blk.ribbon_volume, blk.ribbon_red, blk.btc_a, blk.btc_b)});
+      uint64_t height = m_core.get_target_blockchain_height();
+      res.ribbons.push_back({height, blk.timestamp, blk.ribbon_blue, blk.ribbon_volume, blk.ribbon_red, blk.btc_a, blk.btc_b});
     }    
 
     res.status = CORE_RPC_STATUS_OK;
