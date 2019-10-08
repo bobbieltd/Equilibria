@@ -2659,6 +2659,7 @@ namespace cryptonote
    struct ribbon_data
   {
       uint64_t height;
+      uint64_t timestamp;
       uint64_t ribbon_blue;
       uint64_t ribbon_red;
       uint64_t ribbon_volume;
@@ -2667,6 +2668,7 @@ namespace cryptonote
 
       BEGIN_KV_SERIALIZE_MAP()
         KV_SERIALIZE(height)
+        KV_SERIALIZE(timestamp)
         KV_SERIALIZE(ribbon_blue)
         KV_SERIALIZE(ribbon_red)
         KV_SERIALIZE(ribbon_volume)
