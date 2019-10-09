@@ -296,7 +296,6 @@ namespace service_nodes
 		crypto::generate_signature(hash, pubkey, seckey, req.sig);
 
 		crypto::hash pair_hash = make_ribbon_key_hash(pubkey, req.height);
-		std::cout << "Pair Hash Generation at height (" << req.height << "): " << pair_hash << std::endl;
 		m_ribbon_data_received[pair_hash] = {req.height, req.ribbon_blue, req.ribbon_volume, req.btc_a};
 
 		return true;
@@ -337,11 +336,6 @@ namespace service_nodes
     {
       CRITICAL_REGION_LOCAL(m_lock);
 	  crypto::hash pair_hash = make_ribbon_key_hash(pubkey, height);
-	  std::cout << "Looking for ribbon data for height: " << height << " with pair_hash " << pair_hash << std::endl;
-	  for(auto it = m_ribbon_data_received.cbegin(); it != m_ribbon_data_received.cend(); ++it)
-		{
-			std::cout << it->first << " " << it->second.ribbon_blue << " " << it->second.ribbon_volume << " " << it->second.btc_a << " " << it->second.height << "\n";
-		}
       const auto& it = m_ribbon_data_received.find(pair_hash);
       if (it != m_ribbon_data_received.end())
       {
