@@ -132,15 +132,15 @@ std::pair<double, double> get_coinbase_pro_btc_usd()
 
 std::pair<double, double> get_gemini_btc_usd()
 {
-  std::string data = make_curl_http_get(std::string(GEMINI_API) + std::string("/v1/pubticker/btcusd"));
+  std::string data = make_curl_http_get(std::string(GEMINI_API) + std::string("/pubticker/btcusd"));
   rapidjson::Document document;
   document.Parse(data.c_str());
   double btc_usd = 0;
   double vol_usd = 0;
   for (size_t i = 0; i < document.Size(); i++)
   {
-    btc_usd = std::stod(document[0]["last"].GetString());;
-    vol_usd = std::stod(document[0]["volume"]["USD"].GetString());;
+    btc_usd = std::stod(document["last"].GetString());;
+    vol_usd = std::stod(document["volume"]["USD"].GetString());;
   }
   return {btc_usd, vol_usd};
 }
@@ -162,7 +162,7 @@ std::pair<double, double> get_bitfinex_btc_usd()
 
 std::pair<double, double> get_nance_btc_usd()
 {
-  std::string data = make_curl_http_get(std::string(NANCE_API) + std::string("/api/v1/ticker/24hr"));
+  std::string data = make_curl_http_get(std::string(NANCE_API) + std::string("/ticker/24hr?symbol=BTCUSDT"));
   rapidjson::Document document;
   document.Parse(data.c_str());
   double btc_usd = 0;
@@ -177,7 +177,7 @@ std::pair<double, double> get_nance_btc_usd()
 
 std::pair<double, double> get_stamp_btc_usd()
 {
-  std::string data = make_curl_http_get(std::string(STAMP_API) + std::string("/ticker/BTCUSD"));
+  std::string data = make_curl_http_get(std::string(STAMP_API) + std::string("/ticker/"));
   rapidjson::Document document;
   document.Parse(data.c_str());
   double btc_usd = 0;

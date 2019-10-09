@@ -15,7 +15,7 @@ namespace service_nodes {
 #define TRITON_EX "http://exchange.equilibria.network/api"
 #define BITFINEX_API "https://api.bitfinex.com/v1"
 #define NANCE_API "https://api.binance.com/api/v1"
-#define STAMP_API "https://www.bitstamp.net/api/v2"
+#define STAMP_API "https://www.bitstamp.net/api"
 
 struct exchange_trade {
   uint64_t date;
