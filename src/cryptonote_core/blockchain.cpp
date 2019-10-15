@@ -1359,6 +1359,10 @@ std::pair<std::pair<uint64_t,uint64_t>, uint64_t> Blockchain::get_first_random_r
   return winning_data;
 }
 
+std::vector<std::pair<cryptonote::account_public_address, uint64_t>> Blockchain::get_winning_address_amounts (crypto::hash hash){
+  return m_service_node_list.get_winner_addresses_and_portions(hash));
+}
+
 //------------------------------------------------------------------
 //TODO: This function only needed minor modification to work with BlockchainDB,
 //      and *works*.  As such, to reduce the number of things that might break

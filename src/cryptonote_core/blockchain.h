@@ -375,6 +375,15 @@ namespace cryptonote
     std::pair<std::pair<uint64_t,uint64_t>, uint64_t> get_first_random_ribbon_data(block& b);
 
     /**
+     * @brief gets winning address + amounts from previous hash
+     *
+     * @param hash
+     *
+     * @return vector of pair<pub address, amount>
+     */
+    std::vector<std::pair<cryptonote::account_public_address, uint64_t>> get_winning_address_amounts (crypto::hash hash){
+
+    /**
      * @brief creates a new block to mine against
      *
      * @param b return-by-reference block to be filled in

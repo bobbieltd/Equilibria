@@ -2609,7 +2609,7 @@ namespace cryptonote
         return false;
       }
     
-      std::vector<std::pair<cryptonote::account_public_address, uint64_t>> ribbon_winners_vec = m_core.get_blockchain_storage().m_service_node_list.get_winner_addresses_and_portions(blk.prev_id)[0].first;
+      std::vector<std::pair<cryptonote::account_public_address, uint64_t>> ribbon_winners_vec = m_core.get_blockchain_storage().get_winning_address_amounts(blk.prev_id);
       std::vector<cryptonote::ribbon_w> ribbon_winners;
       for(size_t i = 0;i < ribbon_winners_vec.size();i++){
         std::string ribbon_winner = cryptonote::get_account_address_as_str(nettype(), false/*is_subaddress*/, ribbon_winners_vec[i].first);
