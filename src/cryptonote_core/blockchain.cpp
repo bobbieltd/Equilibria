@@ -1360,7 +1360,7 @@ std::pair<std::pair<uint64_t,uint64_t>, uint64_t> Blockchain::get_first_random_r
 }
 
 std::vector<std::pair<cryptonote::account_public_address, uint64_t>> Blockchain::get_winning_address_amounts (crypto::hash& hash) const{
-  return m_service_node_list.get_winner_addresses_and_portions(hash));
+  return m_service_node_list.get_winner_addresses_and_portions(hash);
 }
 
 //------------------------------------------------------------------
