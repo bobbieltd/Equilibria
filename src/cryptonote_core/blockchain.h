@@ -381,7 +381,7 @@ namespace cryptonote
      *
      * @return vector of pair<pub address, amount>
      */
-    std::vector<std::pair<cryptonote::account_public_address, uint64_t>> get_winning_address_amounts (crypto::hash hash){
+    std::vector<std::pair<cryptonote::account_public_address, uint64_t>> get_winning_address_amounts (crypto::hash& hash) const;
 
     /**
      * @brief creates a new block to mine against
