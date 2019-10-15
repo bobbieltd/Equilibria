@@ -1344,7 +1344,6 @@ std::pair<std::pair<uint64_t,uint64_t>, uint64_t> Blockchain::get_first_random_r
   for (size_t i = 0; i <= all_sn_pubkeys.size(); i++)
   {
     std::pair<std::pair<uint64_t,uint64_t>, uint64_t> ribbon_data = m_service_node_list.get_ribbon_data(all_sn_pubkeys[i], m_db->height() - 1);
-    std::cout << "Bitcoin A: " << ribbon_data.second << std::endl;
     if(b.major_version > 7 && ribbon_data.second != 0)
     {
       return ribbon_data;
