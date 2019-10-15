@@ -1423,6 +1423,18 @@ namespace cryptonote
      bool is_output_spendtime_unlocked(uint64_t unlock_time) const;
      
     /**
+     * @brief checks if a transaction is burnt
+     *
+     * This function checks to see if a transaction is burnt.
+     * 
+     *
+     * @param txid TXHASH
+     *
+     * @return true if burnt, otherwise false
+     */
+    bool is_burn_tx(crypto::hash txid) const;
+
+    /**
      * @brief fetches txs from mixins according to key offsets and an amount
      *
      * @param txin_to_key the tx input. cannot be txin_gen

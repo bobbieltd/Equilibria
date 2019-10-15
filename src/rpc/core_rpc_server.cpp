@@ -2565,7 +2565,6 @@ namespace cryptonote
     return success;
   }
   //------------------------------------------------------------------------------------------------------------------------------
-
   bool core_rpc_server::on_get_service_node_registration_cmd_raw(const COMMAND_RPC_GET_SERVICE_NODE_REGISTRATION_CMD_RAW::request& req,
                                                              COMMAND_RPC_GET_SERVICE_NODE_REGISTRATION_CMD_RAW::response& res,
                                                              epee::json_rpc::error& error_resp)
@@ -2602,12 +2601,22 @@ namespace cryptonote
     
     for(size_t i = req.start_height; i <= req.end_height;i++){
       cryptonote::block blk;
-      if(!m_core.get_blockchain_storage().get_block_by_hash(m_core.get_blockchain_storage().get_block_id_by_height(i), blk))
+      crypto::hash this_hash = m_core.get_blockchain_storage().get_block_id_by_height(i);
+
+      if(!m_core.get_blockchain_storage().get_block_by_hash(hash, blk))
       {
         std::cout << "Could not get block" << std::endl;
         return false;
       }
-      res.ribbons.push_back({i, blk.timestamp, blk.ribbon_blue,  blk.ribbon_red, blk.ribbon_volume, blk.btc_a, blk.btc_b});
+    
+      std::vector<std::pair<cryptonote::account_public_address, uint64_t>> ribbon_winners_vec = m_core.get_blockchain_storage().m_service_node_list.get_winner_addresses_and_portions(blk.prev_id)[0].first;
+      std::vector<cryptonote::ribbon_w> ribbon_winners;
+      for(size_t i = 0;i < ribbon_winners_vec.size();i++){
+        std::string ribbon_winner = cryptonote::get_account_address_as_str(nettype(), false/*is_subaddress*/, ribbon_winners_vec[i].first);
+        ribbon_winners.push_back({ribbon_winner,ribbon_winners_vec[i].second})
+      }
+
+      res.ribbons.push_back({i, string_tools::pod_to_hex(this_hash), ribbon_winners, blk.timestamp, blk.ribbon_blue,  blk.ribbon_red, blk.ribbon_volume, blk.btc_a, blk.btc_b});
     }    
 
     res.status = CORE_RPC_STATUS_OK;

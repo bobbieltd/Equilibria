@@ -2655,19 +2655,28 @@ namespace cryptonote
 		  END_KV_SERIALIZE_MAP()
 	  };
   };
+   struct ribbon_w
+   {
+     std::string address;
+     std::string amount;
+   };
 
    struct ribbon_data
   {
-      uint64_t height;
-      uint64_t timestamp;
-      uint64_t ribbon_blue;
-      uint64_t ribbon_red;
-      uint64_t ribbon_volume;
-      uint64_t btc_a;
-      uint64_t btc_b;
+      uint64_t height; //Blk Height
+      std::string blk_hash; //Blk Hash
+      std::vector<ribbon_w> ribbon_winners; //Service Node Address
+      uint64_t timestamp; //Blk timestamp
+      uint64_t ribbon_blue; //Blk ribbon blue
+      uint64_t ribbon_red; //Blk ribbon red
+      uint64_t ribbon_volume; //Blk ribbon volume
+      uint64_t btc_a; //Blk bitcoin a
+      uint64_t btc_b; //Blk bitcoin b
 
       BEGIN_KV_SERIALIZE_MAP()
         KV_SERIALIZE(height)
+        KV_SERIALIZE(blk_hash)
+        KV_SERIALIZE(ribbon_winners)
         KV_SERIALIZE(timestamp)
         KV_SERIALIZE(ribbon_blue)
         KV_SERIALIZE(ribbon_red)
