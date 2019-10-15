@@ -2607,8 +2607,7 @@ namespace cryptonote
         std::cout << "Could not get block" << std::endl;
         return false;
       }
-      uint64_t height = m_core.get_target_blockchain_height();
-      res.ribbons.push_back({height, blk.timestamp, blk.ribbon_blue,  blk.ribbon_red, blk.ribbon_volume, blk.btc_a, blk.btc_b});
+      res.ribbons.push_back({i, blk.timestamp, blk.ribbon_blue,  blk.ribbon_red, blk.ribbon_volume, blk.btc_a, blk.btc_b});
     }    
 
     res.status = CORE_RPC_STATUS_OK;
