@@ -2613,7 +2613,7 @@ namespace cryptonote
       std::vector<cryptonote::ribbon_w> ribbon_winners;
       for(size_t i = 0;i < ribbon_winners_vec.size();i++){
         std::string ribbon_winner = cryptonote::get_account_address_as_str(nettype(), false/*is_subaddress*/, ribbon_winners_vec[i].first);
-        ribbon_winners.push_back({ribbon_winner,ribbon_winners_vec[i].second})
+        res.ribbon_winners.push_back({ribbon_winner, ribbon_winners_vec[i].second});
       }
 
       res.ribbons.push_back({i, string_tools::pod_to_hex(this_hash), ribbon_winners, blk.timestamp, blk.ribbon_blue,  blk.ribbon_red, blk.ribbon_volume, blk.btc_a, blk.btc_b});

@@ -2658,14 +2658,13 @@ namespace cryptonote
    struct ribbon_w
    {
      std::string address;
-     std::string amount;
+     uint64_t amount;
    };
 
    struct ribbon_data
   {
       uint64_t height; //Blk Height
       std::string blk_hash; //Blk Hash
-      std::vector<ribbon_w> ribbon_winners; //Service Node Address
       uint64_t timestamp; //Blk timestamp
       uint64_t ribbon_blue; //Blk ribbon blue
       uint64_t ribbon_red; //Blk ribbon red
@@ -2676,7 +2675,6 @@ namespace cryptonote
       BEGIN_KV_SERIALIZE_MAP()
         KV_SERIALIZE(height)
         KV_SERIALIZE(blk_hash)
-        KV_SERIALIZE(ribbon_winners)
         KV_SERIALIZE(timestamp)
         KV_SERIALIZE(ribbon_blue)
         KV_SERIALIZE(ribbon_red)
@@ -2701,10 +2699,12 @@ namespace cryptonote
     struct response
     {
       std::vector<ribbon_data> ribbons;
+      std::vector<ribbon_w> ribbon_winners; //Service Node Address
 		  std::string status;
 
       BEGIN_KV_SERIALIZE_MAP()
         KV_SERIALIZE(ribbons)
+        KV_SERIALIZE(ribbon_winners)
         KV_SERIALIZE(status)
       END_KV_SERIALIZE_MAP()
     };
