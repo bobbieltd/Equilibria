@@ -2603,7 +2603,7 @@ namespace cryptonote
       cryptonote::block blk;
       crypto::hash this_hash = m_core.get_blockchain_storage().get_block_id_by_height(i);
 
-      if(!m_core.get_blockchain_storage().get_block_by_hash(hash, blk))
+      if(!m_core.get_blockchain_storage().get_block_by_hash(this_hash, blk))
       {
         std::cout << "Could not get block" << std::endl;
         return false;
@@ -2616,7 +2616,7 @@ namespace cryptonote
         res.ribbon_winners.push_back({ribbon_winner, ribbon_winners_vec[i].second});
       }
 
-      res.ribbons.push_back({i, string_tools::pod_to_hex(this_hash), ribbon_winners, blk.timestamp, blk.ribbon_blue,  blk.ribbon_red, blk.ribbon_volume, blk.btc_a, blk.btc_b});
+      res.ribbons.push_back({i, string_tools::pod_to_hex(this_hash), blk.timestamp, blk.ribbon_blue,  blk.ribbon_red, blk.ribbon_volume, blk.btc_a, blk.btc_b});
     }    
 
     res.status = CORE_RPC_STATUS_OK;
