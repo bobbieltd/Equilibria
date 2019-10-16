@@ -2659,6 +2659,11 @@ namespace cryptonote
    {
      std::string address;
      uint64_t amount;
+
+     BEGIN_KV_SERIALIZE_MAP()
+        KV_SERIALIZE(address)
+        KV_SERIALIZE(amount)
+      END_KV_SERIALIZE_MAP()
    };
 
    struct ribbon_data
