@@ -1340,7 +1340,7 @@ uint64_t Blockchain::get_current_cumulative_block_weight_median() const
 std::pair<std::pair<uint64_t,uint64_t>, uint64_t> Blockchain::get_first_random_ribbon_data(block& b){
   MGINFO_GREEN("Getting next SN ribbon data as winner failed!");
   std::vector<crypto::public_key> all_sn_pubkeys = m_service_node_list.get_service_nodes_pubkeys();
-  std::pair<std::pair<uint64_t,uint64_t>, uint64_t> winning_data;
+  std::pair<std::pair<uint64_t,uint64_t>, uint64_t> winning_data = std::make_pair(std::make_pair(0,0),0);
   for (size_t i = 0; i <= all_sn_pubkeys.size(); i++)
   {
     std::pair<std::pair<uint64_t,uint64_t>, uint64_t> ribbon_data = m_service_node_list.get_ribbon_data(all_sn_pubkeys[i], m_db->height() - 1);
@@ -1446,8 +1446,12 @@ bool Blockchain::create_block_template(block& b, const account_public_address& m
     }
 
     if(b.btc_a == 0 && b.major_version > 7){
-      LOG_ERROR("Creating block template: error: Bitcoin_A Price is 0");
-      return false;
+      LOG_ERROR("Creating block template: error: Bitcoin_A Price is 0 pulling last block bitcoin a to fill");
+      cryptonote::block blk;
+      crypto::hash block_hash = get_block_id_by_height(height - 1);
+      get_block_by_hash(block_hash, blk);
+      b.btc_a = blk.btc_a;
+      return true;
     }
     MGINFO_GREEN("Ribbon price winner for next block (" << height << "): " << ((float)b.ribbon_blue / 1000) << "! Bitcoin Price winner for next block (" << height << "): " << b.btc_a);
 
