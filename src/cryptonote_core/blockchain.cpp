@@ -134,7 +134,7 @@ static const struct {
 };
 
 //------------------------------------------------------------------
-Blockchain::Blockchain(tx_memory_pool& tx_pool, service_nodes::service_node_list& service_node_list, triton::deregister_vote_pool& deregister_vote_pool) :
+Blockchain::Blockchain(tx_memory_pool& tx_pool, service_nodes::service_node_list& service_node_list, triton::deregister_vote_pool& deregister_vote_pool, crypto::public_key &service_node_pk) :
   m_db(), m_tx_pool(tx_pool), m_hardfork(NULL), m_timestamps_and_difficulties_height(0), m_current_block_cumul_weight_limit(0), m_current_block_cumul_weight_median(0),
   m_enforce_dns_checkpoints(false), m_max_prepare_blocks_threads(4), m_db_sync_on_blocks(true), m_db_sync_threshold(1), m_db_sync_mode(db_async), m_db_default_sync(false), m_fast_sync(true), m_show_time_stats(false), m_sync_counter(0), m_bytes_to_sync(0), m_cancel(false),
   m_long_term_block_weights_window(CRYPTONOTE_LONG_TERM_BLOCK_WEIGHT_WINDOW_SIZE),
@@ -143,7 +143,8 @@ Blockchain::Blockchain(tx_memory_pool& tx_pool, service_nodes::service_node_list
   m_difficulty_for_next_block(1),
   m_service_node_list(service_node_list),
   m_deregister_vote_pool(deregister_vote_pool),
-  m_btc_valid(false)
+  m_btc_valid(false),
+  m_service_node_pubkey(service_node_pk)
 {
   LOG_PRINT_L3("Blockchain::" << __func__);
 }
@@ -1355,6 +1356,13 @@ std::pair<std::pair<uint64_t,uint64_t>, uint64_t> Blockchain::get_first_random_r
     } 
 
   }
+  
+  crypto::public_key pk;
+  core.get_service_node_keys(pk, crypto::null_skey);
+  if(winning_data.second == 0){
+      return m_service_node_list.get_ribbon_data(m_service_node_pubkey, m_db->height() - 1);
+  }
+
 
   return winning_data;
 }

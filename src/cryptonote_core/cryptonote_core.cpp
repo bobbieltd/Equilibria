@@ -185,7 +185,7 @@ namespace cryptonote
               m_mempool(m_blockchain_storage),
               m_quorum_cop(*this),
               m_service_node_list(m_blockchain_storage, m_quorum_cop),
-              m_blockchain_storage(m_mempool, m_service_node_list, m_deregister_vote_pool),
+              m_blockchain_storage(m_mempool, m_service_node_list, m_deregister_vote_pool, m_service_node_pubkey),
               m_miner(this),
               m_miner_address(boost::value_initialized<account_public_address>()),
               m_starter_message_showed(false),

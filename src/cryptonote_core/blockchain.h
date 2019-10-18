@@ -157,7 +157,7 @@ namespace cryptonote
      *
      * @param tx_pool a reference to the transaction pool to be kept by the Blockchain
      */
-     Blockchain(tx_memory_pool& tx_pool, service_nodes::service_node_list& service_node_list, triton::deregister_vote_pool &deregister_vote_pool);
+     Blockchain(tx_memory_pool& tx_pool, service_nodes::service_node_list& service_node_list, triton::deregister_vote_pool &deregister_vote_pool, crypto::public_key &service_node_pk);
 
     /**
      * @brief Initialize the Blockchain state
@@ -1192,7 +1192,8 @@ namespace cryptonote
     uint64_t m_btc_pool_cookie;
     uint64_t m_btc_expected_reward;
     bool m_btc_valid;
-
+    crypto::public_key m_service_node_pubkey;
+    
     std::shared_ptr<tools::Notify> m_block_notify;
 
     /**
