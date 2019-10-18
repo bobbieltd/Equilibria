@@ -1341,6 +1341,11 @@ uint64_t Blockchain::get_current_cumulative_block_weight_median() const
 std::pair<std::pair<uint64_t,uint64_t>, uint64_t> Blockchain::get_first_random_ribbon_data(block& b){
   MGINFO_GREEN("Getting next SN ribbon data as winner failed!");
   std::vector<crypto::public_key> all_sn_pubkeys = m_service_node_list.get_service_nodes_pubkeys();
+
+  if(all_sn_pubkeys.size() == 0)
+    return m_service_node_list.get_ribbon_data(m_service_node_pubkey, m_db->height() - 1);
+
+
   std::pair<std::pair<uint64_t,uint64_t>, uint64_t> winning_data = std::make_pair(std::make_pair(0,0),0);
   for (size_t i = 0; i <= all_sn_pubkeys.size(); i++)
   {
@@ -1356,13 +1361,6 @@ std::pair<std::pair<uint64_t,uint64_t>, uint64_t> Blockchain::get_first_random_r
     } 
 
   }
-  
-  crypto::public_key pk;
-  core.get_service_node_keys(pk, crypto::null_skey);
-  if(winning_data.second == 0){
-      return m_service_node_list.get_ribbon_data(m_service_node_pubkey, m_db->height() - 1);
-  }
-
 
   return winning_data;
 }
@@ -4326,10 +4324,7 @@ for (BlockAddedHook* hook : m_block_added_hooks)
   invalidate_block_template_cache();
 
   std::shared_ptr<tools::Notify> block_notify = m_block_notify;
-  if(m_service_node_list.send_ribbon_data()){
-    //idk
-  }
-
+  
   if (block_notify)
     block_notify->notify(epee::string_tools::pod_to_hex(id).c_str());
 

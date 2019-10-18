@@ -628,7 +628,8 @@ namespace cryptonote
 
     r = m_miner.init(vm, m_nettype);
     CHECK_AND_ASSERT_MES(r, false, "Failed to initialize miner instance");
-    if(m_service_node)
+    
+    if(m_target_blockchain_height - get_current_blockchain_height() <= 3)
       submit_ribbon_data();
       
     return load_state_data();

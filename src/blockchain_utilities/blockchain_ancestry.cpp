@@ -352,9 +352,10 @@ struct BlockchainObjects
 	  triton::deregister_vote_pool m_deregister_vote_pool;
 	  service_nodes::quorum_cop m_quorum_cop;
 	  cryptonote::core m_core;
+	  crypto::public_key pk = crypto::public_key{};
 	  BlockchainObjects() :
 		  m_core(nullptr),
-		  m_blockchain(m_mempool, m_service_node_list, m_deregister_vote_pool),
+		  m_blockchain(m_mempool, m_service_node_list, m_deregister_vote_pool, pk),
 		  m_service_node_list(m_blockchain, m_quorum_cop),
 		  m_mempool(m_blockchain),
 		  m_quorum_cop(m_core) { }
