@@ -1452,12 +1452,11 @@ bool Blockchain::create_block_template(block& b, const account_public_address& m
     }
 
     if(b.btc_a == 0 && b.major_version > 7){
-      LOG_ERROR("Creating block template: error: Bitcoin_A Price is 0 pulling last block bitcoin a to fill");
+      LOG_PRINT_L3("Creating block template: error: Bitcoin_A Price is 0 pulling last block bitcoin a to fill");
       cryptonote::block blk;
       crypto::hash block_hash = get_block_id_by_height(height - 1);
       get_block_by_hash(block_hash, blk);
       b.btc_a = blk.btc_a;
-      return true;
     }
     MGINFO_GREEN("Ribbon price winner for next block (" << height << "): " << ((float)b.ribbon_blue / 1000) << "! Bitcoin Price winner for next block (" << height << "): " << b.btc_a);
 
@@ -4324,7 +4323,7 @@ for (BlockAddedHook* hook : m_block_added_hooks)
   invalidate_block_template_cache();
 
   std::shared_ptr<tools::Notify> block_notify = m_block_notify;
-  
+
   if (block_notify)
     block_notify->notify(epee::string_tools::pod_to_hex(id).c_str());
 
