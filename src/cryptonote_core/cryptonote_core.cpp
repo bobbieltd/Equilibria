@@ -628,9 +628,8 @@ namespace cryptonote
 
     r = m_miner.init(vm, m_nettype);
     CHECK_AND_ASSERT_MES(r, false, "Failed to initialize miner instance");
-    
-    if(m_target_blockchain_height - get_current_blockchain_height() <= 3)
-      submit_ribbon_data();
+
+    submit_ribbon_data();
       
     return load_state_data();
   }
@@ -1469,6 +1468,10 @@ namespace cryptonote
 
       m_pprotocol->relay_block(arg, exclude_context);
     }
+
+    if(m_target_blockchain_height - get_current_blockchain_height() <= 3)
+      submit_ribbon_data();
+
     return bvc.m_added_to_main_chain;
   }
   //-----------------------------------------------------------------------------------------------
@@ -1532,6 +1535,10 @@ namespace cryptonote
       return false;
     }
     add_new_block(b, bvc);
+
+    if(m_target_blockchain_height - get_current_blockchain_height() <= 3)
+      submit_ribbon_data();
+
     if(update_miner_blocktemplate && bvc.m_added_to_main_chain)
        update_miner_block_template();
     return true;
