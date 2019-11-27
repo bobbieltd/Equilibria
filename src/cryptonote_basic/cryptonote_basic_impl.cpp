@@ -87,6 +87,13 @@ namespace cryptonote {
   {
     return CRYPTONOTE_MAX_TX_SIZE;
   }
+  int get_emission_speed_factor(uint8_t version){
+    if(version >= 6){
+      return EMISSION_SPEED_FACTOR_PER_MINUTE + 2;
+    }else{
+      return EMISSION_SPEED_FACTOR_PER_MINUTE;
+    }
+  }
   //-----------------------------------------------------------------------------------------------
   int get_emission_speed_factor(uint64_t height, network_type nettype){
     if(nettype == MAINNET){
@@ -120,10 +127,17 @@ namespace cryptonote {
 	   }
 
      static_assert(DIFFICULTY_TARGET_V2 % 60 == 0 && DIFFICULTY_TARGET_V1 % 60 == 0, "difficulty targets must be a multiple of 60");
-	   const int target = DIFFICULTY_TARGET_V2;
+	   int target = DIFFICULTY_TARGET_V2; 
+      if(version < 6)
+      {
+        target = DIFFICULTY_TARGET_V2;
+      }else if(version >= 6){
+        target = DIFFICULTY_TARGET_V3;
+      }
+      
 	   const int target_minutes = target / 60;
-	   const int emission_speed_factor = get_emission_speed_factor(height, nettype);
-	   uint64_t base_reward = 0;
+	   const int emission_speed_factor = get_emission_speed_factor(version);
+	   uint64_t base_reward = (MONEY_SUPPLY - already_generated_coins) >> emission_speed_factor;
 
       if(version <= 5){
 	      base_reward = (MONEY_SUPPLY - already_generated_coins) >> emission_speed_factor;
