@@ -1266,7 +1266,7 @@ uint64_t Blockchain::get_current_cumulative_block_weight_median() const
       ma1_sum += blk.btc_a;
     }
 
-    return ma1_sum / 3;
+    return ma1_sum / 2160;
  }
 //------------------------------------------------------------------
  uint64_t Blockchain::create_ribbon_red(uint64_t height) const 
