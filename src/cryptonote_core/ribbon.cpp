@@ -294,15 +294,15 @@ double filter_trades_by_deviation(std::vector<exchange_trade> trades)
 
 double trades_weighted_mean(std::vector<exchange_trade> trades)
 {
-  double XTRI_volume_sum = 0;
+  double XEQ_volume_sum = 0;
   double weighted_sum = 0;
   for (size_t i = 0; i < trades.size(); i++)
   {
-    XTRI_volume_sum += trades[i].quantity;
+    XEQ_volume_sum += trades[i].quantity;
     weighted_sum += (trades[i].price * trades[i].quantity);
   }
   
-  return weighted_sum / XTRI_volume_sum;
+  return weighted_sum / XEQ_volume_sum;
 }
 
 std::vector<exchange_trade> get_recent_trades()
