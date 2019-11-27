@@ -233,13 +233,13 @@ uint64_t ribbon_protocol::convert_btc_to_usd(double btc)
     usd_average = get_usd_average();
   
 	double usd = usd_average * btc;
-	return static_cast<uint64_t>(usd * 1000); // remove "cents" decimal place and convert to integer
+	return static_cast<uint64_t>(usd * 100000); // remove "cents" decimal place and convert to integer
 }
 
 uint64_t convert_btc_to_usd(double btc)
 {
 	double usd = get_usd_average() * btc;
-	return static_cast<uint64_t>(usd * 1000); // remove "cents" decimal place and convert to integer
+	return static_cast<uint64_t>(usd * 100000); // remove "cents" decimal place and convert to integer
 }
 
 uint64_t create_ribbon_blue(std::vector<exchange_trade> trades)
