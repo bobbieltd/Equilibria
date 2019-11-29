@@ -279,11 +279,7 @@ namespace service_nodes
 			req.ribbon_blue = service_nodes::create_ribbon_blue(recent_trades);
 			req.ribbon_volume = service_nodes::get_volume_for_block(recent_trades);
 		}
-
-		if(m_core.get_hard_fork_version(req.height) > 7)
-			req.btc_a = service_nodes::create_bitcoin_a();
-		else 
-			req.btc_a = 0;
+		req.btc_a = service_nodes::create_bitcoin_a();
 
 		req.pubkey = pubkey;
 
