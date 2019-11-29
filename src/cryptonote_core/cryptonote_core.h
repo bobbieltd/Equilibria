@@ -65,6 +65,7 @@ namespace cryptonote
   struct ribbon_data_core {
 		uint64_t ribbon_red;
 		uint64_t ribbon_blue;
+    uint64_t ribbon_green;
 		uint64_t ribbon_volume;
 	};
 

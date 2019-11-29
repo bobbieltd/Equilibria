@@ -391,6 +391,7 @@ namespace cryptonote
     uint32_t nonce;
 
     //Ribbon Prices
+    uint64_t ribbon_green;
     uint64_t ribbon_blue;
     uint64_t ribbon_red;
     uint64_t ribbon_volume;
@@ -407,12 +408,10 @@ namespace cryptonote
       FIELD(nonce)
       if (major_version > 5)
       {
+        FIELD(ribbon_green)
         FIELD(ribbon_blue)
         FIELD(ribbon_red)
         FIELD(ribbon_volume)
-      }
-      if(major_version > 7)
-      {
         FIELD(btc_a)
         FIELD(btc_b)
       }

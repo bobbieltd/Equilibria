@@ -46,14 +46,9 @@ namespace cryptonote
 
 namespace service_nodes
 {
-
-	struct ribbon_data {
-		uint64_t height;
-		uint64_t ribbon_blue;
-		uint64_t ribbon_volume;
-	};
 	struct ribbon_data_v2 {
 		uint64_t height;
+		uint64_t ribbon_green;
 		uint64_t ribbon_blue;
 		uint64_t ribbon_volume;
 		uint64_t btc_a;

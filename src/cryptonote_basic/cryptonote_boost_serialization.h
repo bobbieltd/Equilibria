@@ -200,12 +200,10 @@ namespace boost
     a & b.nonce;
     if (b.major_version > 5)
     {
+      a & b.ribbon_green;
       a & b.ribbon_blue;
       a & b.ribbon_red;
       a & b.ribbon_volume;
-    }
-    if (b.major_version > 7)
-    {
       a & b.btc_a;
       a & b.btc_b;
     }
